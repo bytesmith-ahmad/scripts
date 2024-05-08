@@ -132,19 +132,12 @@ alias viewdb='sqlitebrowser'  # opens .db files
 alias peek="tree -L 1"        # shows surface level content of dirs
 alias note="notepad.exe"      # open with note
 
-# TaskWarrior MOVED TO SCRIPTS
+# TaskWarrior
 
 alias courses='t courses'
 alias r-v='task all +appointment'
 alias tasks='task limit:10'
-alias add='source task-add'
-alias mod='source task-mod'
-alias del='source task-del'
-alias start='source task-start'
 alias open='source task-open'
-alias stop='source task-stop'
-alias undo='source task-undo'
-alias done='source task-done'
 alias edit='task edit'
 alias errands='source errands'
 alias switch='source switch_task_context.sh'
