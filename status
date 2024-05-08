@@ -27,26 +27,10 @@ function check_git_status() {
     fi
 }
 
-check_git_status "$HOME/archives" "ARCH"
-check_git_status "$HOME/.bills" "BILL"
-check_git_status "$HOME" "HOME"
-check_git_status "$HOME/journal" "JRNL"
-check_git_status "$HOME/.password-store" "PASS"
-check_git_status "$HOME/.task" "TASK"
-
-########## old version #############
-
-# echo -e "${yellow}ARCH $separator${_0}"
-# git -C "$HOME/arch" status
-# 
-# echo -e "\e[93mHOME $separator${_0}"
-# git -C "$HOME" status
-# 
-# echo -e "\e[93mTASKS $separator${_0}"
-# git -C "$HOME/.task" status
-# 
-# echo -e "\e[93mBILLS $separator${_0}"
-# git -C "$HOME/.bills" status
-# 
-# echo -e "\e[93mPASS $separator${_0}"
-# pass git status
+check_git_status "$HOME/archives" "ARC"
+check_git_status "$HOME/bills" "BIL"
+check_git_status "$HOME/bin" "BIN"
+check_git_status "$HOME/journal" "JNL"
+check_git_status "$HOME/.password-store" "PWD"
+check_git_status "$HOME/.config" "CFG"
+check_git_status "$HOME/tasks" "TSK"
