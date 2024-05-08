@@ -18,22 +18,22 @@ github_repo="$github/home"
 # Check for changes in the remote repository
 git remote update > /dev/null 2>&1
 
-# Check if there are any changes
-if git status -uno | grep -q 'Your branch is behind'; then
-    # Changes found, prompt the user
-    read -p "Found changes in the remote repository. Do you want to pull? (Y/N): " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then
-        # User confirmed, pull changes
-        git pull "$github_repo"
-                
-        read -n1 -p "Press key to reset..."
-        reset
-    else
-        echo "Changes not pulled."
-    fi
-else
-    echo "No changes found in the remote repository."
-fi
+# # Check if there are any changes
+# if git status -uno | grep -q 'Your branch is behind'; then
+    # # Changes found, prompt the user
+    # read -p "Found changes in the remote repository. Do you want to pull? (Y/N): " answer
+    # if [[ "$answer" =~ ^[Yy]$ ]]; then
+        # # User confirmed, pull changes
+        # git pull "$github_repo"
+                # 
+        # read -n1 -p "Press key to reset..."
+        # reset
+    # else
+        # echo "Changes not pulled."
+    # fi
+# else
+    # echo "No changes found in the remote repository."
+# fi
 
 # Synchronize password-store
 echo -en "${password_color}Passwords: ${reset_color}"
@@ -49,8 +49,8 @@ git -C journal pull
 
 # Synchronize bills
 echo -en "${finance_color}Bills: ${reset_color}"
-git -C .bills pull
+git -C bills pull
 
 # Synchronize tasks
 echo -en "${task_color}Task: ${reset_color}"
-git -C .task pull
+git -C tasks pull
