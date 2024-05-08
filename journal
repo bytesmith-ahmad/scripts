@@ -1,0 +1,66 @@
+#!/bin/bash
+
+JOURNAL="$HOME/journal"
+editor="notepad.exe"
+
+# Function to get today's date in YYYY-MM-DD format
+function get_today_date() {
+    date +"%Y-%m-%d"
+}
+
+# Function to open the journal file for today's date using the default editor
+function open_today_journal() {
+    local today_date=$(get_today_date)
+    local journal_file="$JOURNAL/$today_date"
+    if [ -e $journal_file ]; then
+        "$editor" "$journal_file" &
+    else
+        echo "# $(date +"%T")" > $journal_file
+        "$editor" "$journal_file" &
+    fi
+    
+}
+
+# Function to open the journal file for a specific date
+function open_journal_for_date() {
+    local journal_date="$1"
+    local journal_file="$JOURNAL/$journal_date"
+    if [ "$journal_date" = "$(get_today_date)" ]; then
+        "$editor" "$journal_file" &
+    else
+        batcat "$journal_file"
+    fi
+}
+
+# Main function
+function main() {
+    # Case 1: If no arguments provided, open today's journal
+    if [ "$#" -eq 0 ]; then
+        open_today_journal
+        exit 0
+    fi
+
+    # Case 2: If one argument provided, open journal for specified date
+    if [ "$#" -eq 1 ]; then
+        if [ "$1" == "sync" ]; then
+            git -C "$JOURNAL" add .
+            git -C "$JOURNAL" commit -m "Sent from $NAME"
+            git -C "$JOURNAL" push
+            git -C "$HOME" add journal
+            git -C "$HOME" commit -m "sent from $NAME" 
+        else
+            open_journal_for_date "$1"
+            exit 0
+        fi
+    fi
+
+    # Display usage instructions if incorrect number of arguments provided
+    echo "Usage:"
+    echo "Case 1: $0"
+    echo "Case 2: $0 <date>"
+    exit 1
+}
+
+# Call the main function with provided arguments
+git -C "$JOURNAL" pull
+main "$@"

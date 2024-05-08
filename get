@@ -1,0 +1,6 @@
+#!/bin/bash
+
+output=$(find "$1" -type f | fzf)
+echo "clipboard <-- $output"
+echo "$output" | xclip -selection clipboard
+exit "$?"

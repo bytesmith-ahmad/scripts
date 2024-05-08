@@ -1,0 +1,52 @@
+#!/bin/bash
+
+yellow="\e[93m"
+_0="\e[0m"
+separator="********************************************************************************"
+checkmark="✅"
+
+# Function to check if the output is empty and perform 'git status' accordingly
+function check_git_status() {
+    local repo_dir="$1"
+    local repo_name="$2"
+    local status_output=$(git -C "$repo_dir" status -s)
+    
+    if [[ -z "$status_output" ]]; then
+        # If the output is empty, then do 'git status'
+        local status_output=$(git -C "$1" status)
+        if [[ $status_output == *"Your branch is up to date"* ]]; then
+            # echo -e "$yellow$2: $checkmark$_0"
+            printf "%-4s: %s\n" "$2" "$checkmark"
+        else
+            echo -e "${yellow}$repo_name $separator${_0}"
+            git -C "$1" status
+        fi
+    else
+        echo -e "${yellow}$repo_name $separator${_0}"
+        git -C "$repo_dir" status -s
+    fi
+}
+
+check_git_status "$HOME/archives" "ARCH"
+check_git_status "$HOME/.bills" "BILL"
+check_git_status "$HOME" "HOME"
+check_git_status "$HOME/journal" "JRNL"
+check_git_status "$HOME/.password-store" "PASS"
+check_git_status "$HOME/.task" "TASK"
+
+########## old version #############
+
+# echo -e "${yellow}ARCH $separator${_0}"
+# git -C "$HOME/arch" status
+# 
+# echo -e "\e[93mHOME $separator${_0}"
+# git -C "$HOME" status
+# 
+# echo -e "\e[93mTASKS $separator${_0}"
+# git -C "$HOME/.task" status
+# 
+# echo -e "\e[93mBILLS $separator${_0}"
+# git -C "$HOME/.bills" status
+# 
+# echo -e "\e[93mPASS $separator${_0}"
+# pass git status

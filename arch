@@ -1,0 +1,148 @@
+#!/bin/bash
+
+# Define an associative array to store option descriptions
+declare -A option_descriptions=(
+    [" "]="Conduct fuzzy search of archives using fzf"
+    ["--help"]="Display this help message"
+    ["dev"]="Open the script with $EDITOR"
+    ["edit"]="Edit document"
+    ["sync"]="Pushes changes to Github"
+    ["tree"]="Display the directory tree"
+    ["warp"]="[Not implemented] cd to chosen directory"
+    ['<command>']="Executes bultin shell command in archives"
+    ['<pattern>']="Searches for pattern in tree"
+)
+
+# config
+archive_path="$HOME/archives"
+
+# TESTS:
+# no arg: passed
+# help: passed
+# dev: passed
+# edit: fail
+# tree: passed
+# warp: fail
+# execute: fail
+# launch: pass
+
+main() {
+    #warning "This is a warning"
+    
+    if [ $# -eq 0 ]; then arch_fzf; fi
+
+    case "$1" in
+        help | --help) help ;;
+        -s | -c) execute_command "$@" ;;
+        dev) open_this_file ;;
+        edit) open_chosen_file ;;
+        pull) pull_from_github ;;
+        sync) push_to_github ;;
+        tree) arch_tree ;;
+        warp) cd_to_directory ;;
+        echo | mkdir | touch | rmdir | rm | bat | cat | yq | md | jq) execute_command "$@" ;;
+        *) launch_search "$@" ;;
+    esac
+
+    echo -e "\e[31mERROR\e[0m" >&2
+    exit 1
+}
+
+arch_fzf() {
+    output=$(find "$archive_path" -type f -o -type d | fzf)
+    es="$?"
+    echo "📋 $style1$output$reset"ac
+    echo "$output" | xclip -selection clipboard
+    exit $es
+}
+
+arch_tree() {
+    tree "$archive_path"
+    exit "$?"
+}
+
+execute_command() {
+    warn Not tested
+    if [[ $1 == '-c' || $1 == '-s' ]]; then shift ; fi
+    # Change directory to ~/arch and execute the provided shell commands
+    (cd "$archives" && eval "$@")
+    exit $?
+}
+
+# Help function to display usage information and option descriptions
+help() {
+    # ANSI color codes for colors without using \e[33m and \e[31m
+    GREEN='\033[0;32m'
+    BLUE='\033[0;34m'
+    NC='\033[0m' # No Color
+
+    echo "Usage: $(basename "$0") [OPTIONS]"
+    echo "Options:"
+    for option in "${!option_descriptions[@]}"; do
+        printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
+    done
+    exit 0
+}
+
+launch_search() {
+    pattern=""
+    
+    for arg in "$@"; do
+        if [ -z "$pattern" ]; then
+            pattern="*$arg*"
+        else
+            pattern="$pattern|*$arg*"
+        fi
+    done
+    
+    # Search using tree command
+    output=$(tree $archive_path -C --dirsfirst --prune --matchdirs -P "$pattern")
+    
+    # Check if the output contains any directories or files
+    if [[ $output == *"0 directories, 0 files"* ]]; then
+        warn "No match."
+        exit 0
+    else
+        echo "$output"
+        exit 0
+    fi
+}
+
+open_chosen_file() {
+    warn Not tested
+    # Use eval to expand wildcard pattern in $2
+    files=$(eval "ls -d $archive_path/$2")
+    
+    # Check if any files match the pattern
+    if [ -n "$files" ]; then
+        # Iterate over the matched files and edit them with the $EDITOR
+        for file in $files; do
+            $EDITOR "$file"
+        done
+        exit $?
+    else
+        echo -e "\e[31mNo matching files found.\e[0m"
+        exit 1
+    fi
+}
+
+open_this_file() {
+    micro $0
+    exit "$?"
+}
+
+pull_from_github() {
+    git -C $archive_path pull
+    exit "$?"
+}
+
+push_to_github() {
+    git -C $archive_path add .
+    git -C $archive_path commit -m "sent from $NAME"
+    git -C $archive_path push
+    exit "$?"
+}
+
+warn() { echo -e "\e[33m$@\e[0m"; }
+
+main "$@"

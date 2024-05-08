@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# Define an associative array to store option descriptions
+declare -A option_descriptions=(
+    [" "]="What happens if no arg given?"
+    ["help"]="Display a help message"
+    ["dev"]="Opens this script with $EDITOR"
+    ['<define option here>']='<Describe here>'
+    #[""]=""
+    #[""]=""
+    #[""]=""
+)
+
+# config
+# put configurations here
+
+main() {
+    #warn "This is a warning"
+    
+    if [ $# -eq 0 ]; then f0; fi
+
+    case "$1" in
+        help | --help) help ;;
+        dev) open_this_file ;;
+        sync) push_to_github ;;
+        # map pattern to function
+        arg) f1
+        # Can map multiple args to the same function
+        arg1 | arg2 | arg3) f2
+        # If no match, execute defualt function, potentially return usage and exit 1
+        *) default_function "$@" ;;
+    esac
+
+    # Optionally handle secondary arg
+#    case "$2" in
+#            sarg1) f21
+#            sarg2) f22
+#            #...
+#            *) default_function "$@" ;;
+#    esac
+
+    # Process should not reach this point, if it does, maybe forgot exit
+    echo -e "\e[31mERROR\e[0m" >&2
+    exit 1
+}
+
+# Now add functions here in alphabetical order **********************************************
+
+f0() {
+    # add code here
+    exit "$?" # OR exit 0
+}
+
+f1() {
+    # add code here
+    exit "$?"
+}
+
+# Help function to display usage information and option descriptions
+help() {
+    # ANSI color codes for colors without using \e[33m and \e[31m
+    GREEN='\033[0;32m'
+    BLUE='\033[0;34m'
+    NC='\033[0m' # No Color
+
+    echo "Usage: $(basename "$0") [OPTIONS]"
+    echo "Options:"
+    for option in "${!option_descriptions[@]}"; do
+        printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
+    done
+    exit 0
+}
+
+open_this_file() {
+    micro $0
+    exit "$?"
+}
+
+pull_from_github() {
+    git -C $archive_path pull
+    exit "$?"
+}
+
+push_to_github() {
+    git -C $archive_path add .
+    git -C $archive_path commit -m "sent from $NAME"
+    git -C $archive_path push
+    exit "$?"
+}
+
+warn() { echo -e "\e[33m$@\e[0m"; }
+
+main "$@"
