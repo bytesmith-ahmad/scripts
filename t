@@ -2,13 +2,13 @@
 
 # This is a `task` decorator.
 
-target="$HOME/.task"
+target="$HOME/tasks"
 
 # Define an associative array to store option descriptions
 declare -A option_descriptions=(
     [" "]="Display at most 10 tasks"
     ["courses"]="Shows you courses"
-    ["dev"]="Develop this script"
+    ["debug"]="Develop this script"
     ["help"]="Display a help message"
     ["open"]="cd to task's directory [Not implemented]"
     # ["rv"]=
@@ -28,7 +28,7 @@ main() {
 
     case "$1" in
         courses) show_courses ;;
-        dev) open_this_file ;;
+        debug) open_this_file ;;
         help | --help) help ;;
         open) warn "Not implemented." ; exit 1 ;;
         sync) synchronize ;;
@@ -92,15 +92,11 @@ push_to_github() {
     git -C $target add .
     git -C $target commit -m "'$*'" > /dev/null
     git -C $target push
-    es="$?"
-    git -C $HOME add .task
-    git -C $HOME commit -m "[autocommit] .task" > /dev/null
-    git -C $HOME push 2> /dev/null
-    exit "$es"
+    exit "$?"
 }
 
 synchronize() {
-    output=$(git -C "$taskdir" pull)
+    output=$(git -C "$target" pull)
     # Check if the output contains "Already up to date."
     if [[ "$output" == "Already up to date." ]]; then
         # warn "Already up to date. Pushing changes..."

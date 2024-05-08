@@ -1,11 +1,11 @@
 #!/bin/bash
 
-target="$HOME/.bills"
+target="$HOME/bills"
 
 # Define an associative array to store option descriptions
 declare -A option_descriptions=(
     [" "]="______"
-    ["dev"]="Develop this script"
+    ["debug"]="Debug this script"
     ["help"]="Display a help message"
     ["sync"]="Synchronize with Github"
     ["*"]="Any other patterns executes as task rc:/home/ahmad/.billrc *"
@@ -17,7 +17,7 @@ main() {
     if [ $# -eq 0 ]; then no_arg_fn; fi
 
     case "$1" in
-        dev) open_this_file ;;
+        debug) open_this_file ;;
         help | --help) help ;;
         sync) synchronize ;;
         *) execute_and_push "$@" ;;
@@ -74,11 +74,7 @@ push_to_github() {
     git -C $target add .
     git -C $target commit -m "'$*'" > /dev/null
     git -C $target push
-    es="$?"
-    git -C $HOME add .bills
-    git -C $HOME commit -m "[autocommit] .bills" > /dev/null
-    git -C $HOME push 2> /dev/null
-    exit "$es"
+    exit "$?"
 }
 
 synchronize() {
