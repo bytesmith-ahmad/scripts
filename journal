@@ -1,7 +1,7 @@
 #!/bin/bash
 
 JOURNAL="$HOME/journal"
-editor="notepad.exe"
+editor="gedit"
 
 # Function to get today's date in YYYY-MM-DD format
 function get_today_date() {
