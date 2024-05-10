@@ -31,7 +31,7 @@ main() {
 # Now add functions here in alphabetical order **********************************************
 
 execute_and_push() {
-    task rc:/home/ahmad/.billrc "$@"
+    task rc:"$HOME"/.billrc "$@"
     case "$1" in
         ad*|mod*|edit|done|undo|del*) push_to_github "$@" ;;
         start|stop|done) no_arg_fn ;;
@@ -55,12 +55,12 @@ help() {
 }
 
 no_arg_fn() {
-    out=$(task rc:/home/ahmad/.billrc active 2>&1)
+    out=$(task rc:"$HOME"/.billrc active 2>&1)
     if [[ "$out" == *"No matches"* ]]; then
-        task rc:/home/ahmad/.billrc limit:10
+        task rc:"$HOME"/.billrc limit:10
         exit "$?"
     else
-        task rc:/home/ahmad/.billrc active
+        task rc:"$HOME"/.billrc active
         exit "$?"
     fi
 }
