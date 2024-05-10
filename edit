@@ -8,6 +8,8 @@ declare -A option_descriptions=(
     ["help"]="Display a help message"
     ["debug"]="Opens this script with $EDITOR"
     ["aliases"]="modify ~/.aliases"
+    # ["bashrc"]
+    ["taskrc"]="$HOME/rc-files/.taskrc"
     ["variables"]="modify ~/.variables"
 )
 
