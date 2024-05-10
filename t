@@ -16,11 +16,6 @@ declare -A option_descriptions=(
     ["*"]="Any other patterns executes as task *"
 )
 
-# from config
-# alias add='source task-add' TODO
-# alias mod='source task-mod' TODO
-# alias open='source task-open' TODO
-
 main() {
     #warn "This is a warning"
 
@@ -56,6 +51,7 @@ execute_and_push() {
 }
 
 no_arg_fn() {
+
     out=$(task active 2>&1)
     if [[ "$out" == "No matches." ]]; then
         warn "No active tasks currently"
