@@ -1,27 +1,49 @@
 #!/bin/bash
 
-# My journal for recording thoughts quickly
+# Opens browser
+
+ # - Launch Firefox and open a web page:
+   # firefox https://www.duckduckgo.com
+# 
+ # - Open a new window:
+   # firefox --new-window https://www.duckduckgo.com
+# 
+ # - Open a private (incognito) window:
+   # firefox --private-window
+# 
+ # - Search for "wikipedia" using the default search engine:
+   # firefox --search "wikipedia"
+# 
+ # - Launch Firefox in safe mode, with all extensions disabled:
+   # firefox --safe-mode
+# 
+ # - Take a screenshot of a web page in headless mode:
+   # firefox --headless --screenshot path/to/output_file.png https://example.com/
+# 
+ # - Use a specific profile to allow multiple separate instances of Firefox to run at once:
+   # firefox --profile path/to/directory https://example.com/
+# 
+ # - Set Firefox as the default browser:
+   # firefox --setDefaultBrowser
+
 
 # Define an associative array to store option descriptions
 declare -A option_descriptions=(
     [" "]="Opens today\'s journal in $VISUAL"
     ["help"]="Display a help message"
     ["debug"]="Opens this script with $EDITOR"
-    ["sync"]="synchronize with Github"
-    ["read [date]"]="read entry for given date" 
 )
 
 # configs
-debug=0
-JOURNAL="$HOME/journal"
-editor="gedit"
+debug=1
 
 # Main function
 function main() {
+    warn "bad documentation"
     # Case 1: If no arguments provided, open today's journal
     if [ "$#" -eq 0 ]; then
-        open_today_journal
-        exit 0
+        warn "Not implemented"
+        exit 1
     fi
     
     case "$1" in
@@ -29,12 +51,8 @@ function main() {
         -h | h?lp | --help) show_help ;;
         #debug
         d?b?g | db?g) debug_this_script ;;
-        # sync
-        sync) push_to_github ;;
-        # read
-        read) show_entry "$2";;
         # other
-        *) open_journal_for_date "$1" ;;
+        *) search_web "$@" ;;
     esac
 
     # Process should not reach this point, if it does, maybe forgot exit
@@ -57,6 +75,17 @@ debug_this_script() {
 # Function to get today's date in YYYY-MM-DD format
 get_today_date() {
     date +"%Y-%m-%d"
+}
+
+# Function to join arguments with '+'
+join_args_with_plus() {
+    local joined_args=""
+    for arg in "$@"; do
+        joined_args+="$arg+"
+    done
+    # Remove the trailing '+'
+    joined_args=${joined_args%+}
+    echo "$joined_args"
 }
 
 # Function to open the journal file for today's date using the default editor
@@ -87,6 +116,13 @@ push_to_github() {
     git -C "$JOURNAL" add .
     git -C "$JOURNAL" commit -m "Sent from $NAME"
     git -C "$JOURNAL" push
+    exit "$?"
+}
+
+search_web() {
+    search_term=$(join_args_with_plus "$@")
+    url="https://www.google.com/search?client=firefox-b-e&q=$search_term"
+    firefox --new-tab "$url" 2>&1 > /dev/null &
     exit "$?"
 }
 
@@ -124,5 +160,4 @@ warn() { echo -e "\e[33m$@\e[0m"; }
 git config --global user.name "Bytesmith Ahmad"
 
 # Call the main function with provided arguments
-git -C "$JOURNAL" pull
 main "$@"
