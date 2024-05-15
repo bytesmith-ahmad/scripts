@@ -50,6 +50,7 @@ default_fn() {
 
     case "${file##*.}" in
         pdf)  gio open "$file" ;;
+        odt | doc*) soffice "$file" &;;
         txt)  $VISUAL "$file" ;;
         md)   $VISUAL "$file" ;;
         sh)   $VISUAL "$file" ;;
