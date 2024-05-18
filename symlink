@@ -1,0 +1,180 @@
+#!/bin/bash
+
+# symlinks manager
+
+warnings() {
+    warn "add usage case for each function"
+    warn "Concept only.
+    documentation incomplete
+    functions incomplete"
+}
+
+# Define an associative array to store option descriptions
+# TODO make function for this
+declare -A option_descriptions=(
+    [" "]="What happens if no arg given?"
+    ["help"]="Display a help message"
+    ["debug"]="Opens this script with \$EDITOR"
+    ["<link> to <target>"]="main syntax"
+    ["*"]="Default function"
+)
+
+main() {
+    DB=$(echo $CONNECTED_DB | cut -d':' -f1)
+    target_table=$(echo $CONNECTED_DB | cut -d':' -f2)
+    
+    if [ $# -eq 0 ]; then show_usage; fi
+
+    case "$1" in
+            -h | h?lp  ) shift ; show_help ;; #TODO preserve order
+            -d | d*bug ) shift ; debug_this_script ;; # Tested
+            -from | from) shift ; default_fn "$@" ;;
+            *) default_fn "$@" ;;
+    esac
+
+    # Process should not reach this point, if it does, maybe forgot exit
+    echo -e "\e[31mERROR\e[0m" >&2
+    exit 1
+}
+
+# Now add functions here in alphabetical order **********************************************
+
+debug_this_script() {
+    micro $0
+    exit "$?"
+}
+
+default_fn() {
+    # Initialize variables
+    linkname=""
+    target=""
+    
+    # Check for missing arguments
+    if [[ $# -lt 2 ]]; then
+        err "Missing arguments"
+        exit 1
+    fi
+    
+    # Handle options
+    case "$1" in
+        to | -to)
+            err "Missing link name"
+            exit 1
+            ;;
+        *)
+            linkname="$1"
+            ;;
+    esac
+    
+    case "$2" in
+        to | -to | '-->')
+            if [[ -z "$3" ]]; then
+                err "Missing target for symlink"
+                exit 1
+            else
+                target="$3"
+            fi
+            ;;
+        *)
+            target="$2"
+            ;;
+    esac
+    
+    # Create the symlink and capture stderr
+    stderr=$(ln -s "$target" "$linkname" 2>&1)
+    exitstat="$?"
+    
+    # Check exit status and log appropriately
+    if [[ $exitstat -eq 0 ]]; then
+        warn "Created symlink $linkname ---> $target"
+        exit 0
+    else
+        err "ERROR: $stderr"
+        exit $exitstat
+    fi
+}
+
+# default_fn() {
+    # case "$1" in
+        # to | -to) err "Missing link name" ; exit 1 ;;
+        # *) linkname="$1" ;;
+    # esac
+    # case "$2" in
+        # to | -to | -->) target="$3" ;;
+        # *) target="$2" ;;
+    # esac
+# 
+    # stderr=$(ln -s "$target" "$linkname" 2>&1)
+    # exitstat="$?"
+# 
+    # if [[ $exitstat -eq 0 ]]; then
+       # warn "Created symlink $linkname \-\> $target"
+    # else
+        # err "ERROR: $stderr"
+    # fi
+# }
+
+edit_aliases() {
+	"$EDITOR" $HOME/.aliases
+	exit "$?"
+}
+
+edit_variables() {
+	"$EDITOR" $HOME/.variables
+	exit "$?"
+}
+
+execute_git(){
+	echo -e "CURRENT LOCATION: $bin_path"
+	git -C $bin_path "$@"
+	exit "$?"
+}
+
+list_tables() {
+    # Test if the string is empty
+    if [ -z "$CONNECTED_DB" ]; then
+        warn NO CONNECTION
+        warn "Do sql connect to connect to db"
+    else
+        echo "CONNECTED: $DB"
+        echo "SELECTED: $target_table"
+        err "SELECT ALL TABLES FROM $DB"
+    fi
+    exit "$?"
+}
+
+set_x() {
+    case "$1" in
+        db) echo "set database $2" ;;
+        ta??e*) echo "Set table/target $2" ;;
+        *) echo "set $*" ;;
+    esac
+#    exit 1
+}
+
+# Help function to display usage information and option descriptions
+show_help() {
+    # ANSI color codes for colors without using \e[33m and \e[31m
+    GREEN='\033[0;32m'
+    BLUE='\033[0;34m'
+    NC='\033[0m' # No Color
+
+    echo "Usage: $(basename "$0") [OPTIONS]"
+    echo "Options:"
+    for option in "${!option_descriptions[@]}"; do
+        printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
+    done
+    exit 0
+}
+
+show_usage() {
+	warn 'symlink <link> to <target>'
+	exit 1
+}
+
+# Messages
+warn(){ echo -e "\e[33m$@\e[0m"; }
+err() { echo -e "\e[31m$@\e[0m" 1>&2; }
+
+#warnings
+main "$@" #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
