@@ -31,7 +31,7 @@ git -C "$HOME/bills" pull
 
 # Synchronize tasks
 echo -en "${task_color}Task: ${reset_color}"
-git -C tasks pull
+git -C "$HOME/tasks" pull
 
 # Synchronize bin
 echo -en "Bin: "
