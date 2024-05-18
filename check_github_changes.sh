@@ -35,21 +35,29 @@ git remote update > /dev/null 2>&1
     # echo "No changes found in the remote repository."
 # fi
 
+# Synchronize rc-files
+echo -en "Configurations: "
+git -C "$HOME/rc-files" pull
+
+# Synchronize bin
+echo -en "Scripts: "
+git -C "$HOME/bin" pull
+
 # Synchronize password-store
 echo -en "${password_color}Passwords: ${reset_color}"
 pass git pull
 
 # Synchronize archives
 echo -en "${archive_color}Archives: ${reset_color}"
-git -C archives pull
+git -C "$HOME/archives" pull
 
 # Synchronize journal
 echo -en "${journal_color}Journal: ${reset_color}"
-git -C journal pull
+git -C "$HOME/journal" pull
 
 # Synchronize bills
 echo -en "${finance_color}Bills: ${reset_color}"
-git -C bills pull
+git -C "$HOME/bills" pull
 
 # Synchronize tasks
 echo -en "${task_color}Task: ${reset_color}"
