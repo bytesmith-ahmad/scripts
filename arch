@@ -6,6 +6,7 @@ declare -A option_descriptions=(
     ["--help"]="Display this help message"
     ["debug"]="Open the script with $EDITOR"
     ["edit"]="Edit document"
+    ["git"]="Git commands"
     ["sync"]="Pushes changes to Github"
     ["tree"]="Display the directory tree"
     ["warp"]="[Not implemented] cd to chosen directory"
@@ -14,7 +15,8 @@ declare -A option_descriptions=(
 )
 
 # config
-archive_path="$HOME/archives"
+archives_path="$HOME/archives"
+path=$archives_path
 
 # TESTS:
 # no arg: passed
@@ -36,6 +38,7 @@ main() {
         -s | -c) execute_command "$@" ;;
         d*bug) open_this_file ;;
         edit) open_chosen_file ;;
+        git) shift ; execute_git "$@" ;;
         ls) list_top_level ;;
         pull) pull_from_github ;;
         sync) push_to_github ;;
@@ -50,7 +53,7 @@ main() {
 }
 
 arch_fzf() {
-    output=$(find "$archive_path" -type f -o -type d | fzf)
+    output=$(find "$archives_path" -type f -o -type d | fzf)
     es="$?"
     echo "📋 $style1$output$reset"ac
     echo "$output" | xclip -selection clipboard
@@ -58,7 +61,7 @@ arch_fzf() {
 }
 
 arch_tree() {
-    tree "$archive_path"
+    tree "$archives_path"
     exit "$?"
 }
 
@@ -68,6 +71,12 @@ execute_command() {
     # Change directory to ~/arch and execute the provided shell commands
     (cd "$archives" && eval "$@")
     exit $?
+}
+
+execute_git(){
+	echo -e "CURRENT LOCATION: $path"
+	git -C $path "$@"
+	exit "$?"
 }
 
 # Help function to display usage information and option descriptions
@@ -97,7 +106,7 @@ launch_search() {
     done
     
     # Search using tree command
-    output=$(tree $archive_path -C --dirsfirst --prune --matchdirs -P "$pattern")
+    output=$(tree $archives_path -C --dirsfirst --prune --matchdirs -P "$pattern")
     
     # Check if the output contains any directories or files
     if [[ $output == *"0 directories, 0 files"* ]]; then
@@ -116,7 +125,7 @@ list_top_level() {
 open_chosen_file() {
     warn Not tested
     # Use eval to expand wildcard pattern in $2
-    files=$(eval "ls -d $archive_path/$2")
+    files=$(eval "ls -d $archives_path/$2")
     
     # Check if any files match the pattern
     if [ -n "$files" ]; then
@@ -137,14 +146,14 @@ open_this_file() {
 }
 
 pull_from_github() {
-    git -C $archive_path pull
+    git -C $archives_path pull
     exit "$?"
 }
 
 push_to_github() {
-    git -C $archive_path add .
-    git -C $archive_path commit -m "sent from $NAME"
-    git -C $archive_path push
+    git -C $archives_path add .
+    git -C $archives_path commit -m "sent from $NAME"
+    git -C $archives_path push
     exit "$?"
 }
 

@@ -19,6 +19,9 @@ declare -A option_descriptions=(
     ["help"]="Display a help message"
     ["debug"]="Opens this script with \$EDITOR"
     ["git"]="Git commands"
+    ["add"]="shorcut for bin git add"
+    ["commit"]="shortcut for bin git commit"
+    ["push"]="shortcut for bin git push"
     ["*"]="Default function"
 )
 
@@ -31,7 +34,8 @@ main() {
     case "$1" in
         -h | h?lp  ) shift ; show_help ;; #TODO preserve order
         -D | d*bug ) shift ; debug_this_script ;; # Tested
-        -g | git  ) shift ; execute_git "$@";; #untested TODO
+        -g | git  ) shift ; execute_git "$@" ;;
+        status | diff | add | commit | push ) execute_git "$@" ;;
         *) default_fn "$@" ;; #TODO
     esac
 
@@ -69,7 +73,6 @@ edit_variables() {
 }
 
 execute_git(){
-	warn "--- untested ---"
 	echo -e "CURRENT LOCATION: $bin_path"
 	git -C $bin_path "$@"
 	exit "$?"
