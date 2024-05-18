@@ -4,7 +4,7 @@
 declare -A option_descriptions=(
     [" "]="Conduct fuzzy search of archives using fzf"
     ["--help"]="Display this help message"
-    ["dev"]="Open the script with $EDITOR"
+    ["debug"]="Open the script with $EDITOR"
     ["edit"]="Edit document"
     ["sync"]="Pushes changes to Github"
     ["tree"]="Display the directory tree"
@@ -34,8 +34,9 @@ main() {
     case "$1" in
         help | --help) help ;;
         -s | -c) execute_command "$@" ;;
-        dev) open_this_file ;;
+        d*bug) open_this_file ;;
         edit) open_chosen_file ;;
+        ls) list_top_level ;;
         pull) pull_from_github ;;
         sync) push_to_github ;;
         tree) arch_tree ;;
@@ -106,6 +107,10 @@ launch_search() {
         echo "$output"
         exit 0
     fi
+}
+
+list_top_level() {
+    err Not implemented
 }
 
 open_chosen_file() {
