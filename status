@@ -16,7 +16,7 @@ function check_git_status() {
         local status_output=$(git -C "$1" status)
         if [[ $status_output == *"Your branch is up to date"* ]]; then
             # echo -e "$yellow$2: $checkmark$_0"
-            printf "%-4s: %s\n" "$2" "$checkmark"
+            printf "%-8s: %s\n" "$2" "$checkmark"
         else
             echo -e "${yellow}$repo_name $separator${_0}"
             git -C "$1" status
@@ -27,10 +27,10 @@ function check_git_status() {
     fi
 }
 
-check_git_status "$HOME/archives" "ARC"
-check_git_status "$HOME/bills" "BIL"
-check_git_status "$HOME/bin" "BIN"
-check_git_status "$HOME/journal" "JNL"
-check_git_status "$HOME/.password-store" "PWD"
-check_git_status "$HOME/.config" "CFG"
-check_git_status "$HOME/tasks" "TSK"
+check_git_status "$HOME/archives" "ARCHIVES"
+check_git_status "$HOME/bills" "BILLS"
+check_git_status "$HOME/bin" "SCRIPTS"
+check_git_status "$HOME/journal" "JOURNAL"
+check_git_status "$HOME/.password-store" "SECRETS"
+check_git_status "$HOME/rc-files" "RC-FILES"
+check_git_status "$HOME/tasks" "TASKS"
