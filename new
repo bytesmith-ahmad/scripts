@@ -15,19 +15,18 @@ declare -A option_descriptions=(
     [" "]="What happens if no arg given?"
     ["help"]="Display a help message"
     ["debug"]="Opens this script with \$EDITOR"
+	["doc,writer"]="Creates an empty Writer document."
     ["*"]="Default function"
 )
 
 main() {
-    DB=$(echo $CONNECTED_DB | cut -d':' -f1)
-    target_table=$(echo $CONNECTED_DB | cut -d':' -f2)
     
     if [ $# -eq 0 ]; then default_fn; fi
 
     case "$1" in
-        h?lp  ) shift ; show_help ;; #TODO preserve order
-        d*bug ) shift ; debug_this_script ;; # Tested
-        doc*  ) shift ; open_document ;;
+        -h | --help  | h?lp  ) shift ; show_help ;;
+        -D | --debug | d*bug ) shift ; debug_this_script ;;
+        doc* | writ* ) shift ; open_writer_document "$@" ;;
         *) default_fn "$@" ;; #TODO
     esac
 
@@ -38,8 +37,13 @@ main() {
 
 # Now add functions here in alphabetical order **********************************************
 
-open_document() {
-    soffice --writer 2>&1 /dev/null &
+open_writer_document() {
+    if [ $# -gt 0 ]; then
+        filename="$1.odt"
+        touch $filename
+    fi
+    $filename="./new-doc.odt"
+    soffice --writer $filename &
 }
 
 execute_sql() {

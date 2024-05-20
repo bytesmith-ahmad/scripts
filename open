@@ -22,6 +22,7 @@ main() {
     case "$1" in
         h?lp  ) shift ; show_help ;; # Show help
         d*bug ) shift ; debug_this_script ;; # Open script in editor
+        --new ) shift ; "$HOME/bin/new" "$@" ;; # Redirect to new
         *) default_fn "$@" ;; # Open file
     esac
 
