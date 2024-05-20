@@ -30,7 +30,7 @@ show_date() {
 
 show_RV() {
     echo -ne "\e[7;97mAPPOINTMENTS\e[27;39m"
-    task all +appointment
+    task +appointment
 }
 
 # Display tasks from taskwarrior
