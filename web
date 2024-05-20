@@ -39,7 +39,7 @@ debug=1
 
 # Main function
 function main() {
-    warn "bad documentation"
+    warn "--- bad documentation ---"
     # Case 1: If no arguments provided, open today's journal
     if [ "$#" -eq 0 ]; then
         warn "Not implemented"
