@@ -34,17 +34,18 @@ main() {
     if [ $# -eq 0 ]; then arch_fzf; fi
 
     case "$1" in
-        help | --help) help ;;
-        -s | -c) execute_command "$@" ;;
-        d*bug) open_this_file ;;
-        edit) open_chosen_file ;;
-        git) shift ; execute_git "$@" ;;
-        ls) list_top_level ;;
-        pull) pull_from_github ;;
-        sync) push_to_github ;;
-        tree) arch_tree ;;
-        warp) cd_to_directory ;;
+        ~d | d*bug ) open_this_file ;;
+        -h | *help ) show_help ;;
+        -c | bash  ) shift ; execute_command "$@" ;;
+        -g | git   ) shift ; execute_git "$@" ;;
+        -l | ls    ) list ;;
+        -s | sync  ) push_to_github ;;
+        -t | tree  ) arch_tree ;;
+        -w | warp  ) cd_to_directory ;;
+        # bash shortcuts
         echo | mkdir | touch | rmdir | rm | bat | cat | yq | md | jq) execute_command "$@" ;;
+        # git shortcuts
+        diff | status | add | commit | push | pull ) execute_git "$@" ;;
         *) launch_search "$@" ;;
     esac
 
@@ -66,16 +67,16 @@ arch_tree() {
 }
 
 execute_command() {
-    warn Not tested
-    if [[ $1 == '-c' || $1 == '-s' ]]; then shift ; fi
+    warn "Not tested"
+    if [[ "$1" == '-c' ]]; then shift ; fi
     # Change directory to ~/arch and execute the provided shell commands
-    (cd "$archives" && eval "$@")
+    (cd "$path" && eval "$@")
     exit $?
 }
 
 execute_git(){
 	echo -e "CURRENT LOCATION: $path"
-	git -C $path "$@"
+	git -C "$path" "$@"
 	exit "$?"
 }
 
@@ -118,8 +119,11 @@ launch_search() {
     fi
 }
 
-list_top_level() {
-    err Not implemented
+list() {
+    cd $path
+    pwd
+    ls
+    exit 0
 }
 
 open_chosen_file() {
@@ -145,16 +149,28 @@ open_this_file() {
     exit "$?"
 }
 
-pull_from_github() {
-    git -C $archives_path pull
-    exit "$?"
-}
-
 push_to_github() {
     git -C $archives_path add .
     git -C $archives_path commit -m "sent from $NAME"
     git -C $archives_path push
     exit "$?"
+}
+
+show_help() {
+    warn "    ~d | d*bug ) open_this_file ;;
+    -h | *help ) show_help ;;
+    -c | bash  ) shift ; execute_command "$@" ;;
+    -g | git   ) shift ; execute_git "$@" ;;
+    -l | ls    ) list ;;
+    -s | sync  ) push_to_github ;;
+    -t | tree  ) arch_tree ;;
+    -w | warp  ) cd_to_directory ;;
+    # bash shortcuts
+    echo | mkdir | touch | rmdir | rm | bat | cat | yq | md | jq) execute_command "$@" ;;
+    # git shortcuts
+    diff | status | add | commit | push | pull ) execute_git "$@" ;;
+    *) launch_search "$@" ;;"
+    exit 0
 }
 
 warn() { echo -e "\e[33m$@\e[0m"; }
