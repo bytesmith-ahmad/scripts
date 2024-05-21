@@ -14,7 +14,7 @@ declare -A option_descriptions=(
 # configs
 debug=0
 JOURNAL="$HOME/journal"
-editor="gedit"
+editor="notepad.exe"
 
 # Main function
 function main() {
