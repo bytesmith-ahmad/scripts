@@ -3,17 +3,34 @@
 # SQLite3 wrapper script for ease of manipulation inspired by TaskWarrior
 
 warnings() {
+	warn "TODO width control"
     warn "add usage case for each function"
-    warn "Concept only.
-    documentation incomplete
-    functions incomplete"
+    warn "documentation incomplete"
 }
 
-## configurations *********************************
-pragma1='PRAGMA count_changes = true'
-pragma2='PRAGMA ...'
-pragma3='PRAGMA ...'
-mode=column
+# CONFIG ***************************************************************************************
+	# toggle debugging info
+		DEBUG=0
+	# metadata location
+		metadata="$HOME/.sql"
+	# default values
+		DB="$metadata/unnamed.db"
+		MODE="column"
+	# pragmas
+		pragma1='PRAGMA count_changes = true'
+		pragma2='PRAGMA ...'
+		pragma3='PRAGMA ...'
+	# queries
+		# Fetch version
+		query0="SELECT 'SQLite version ' || sqlite_version() AS ''" # mode=list
+		# Count tables and views
+		query1="SELECT count(name) || ' tables found.' AS '' FROM sqlite_master WHERE type='table' OR type='view'" # mode=list
+		# List tables
+		query2="SELECT name AS 'Tables' FROM sqlite_schema WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY 1"
+		# ...
+		query3=""
+		# ...
+		query4=""
 
 # Define an associative array to store option descriptions
 # TODO make function for this
@@ -23,6 +40,8 @@ declare -A option_descriptions=(
     ["debug"]="Opens this script with \$EDITOR"
     ["connect"]="Connect to a database"
     ["tables"]="List tables"
+	["switch"]="Switches focus on a table"
+	["get"]="Get connection for example"
     ["set"]="Set target table or database"
     ["run | execute"]="Execute a command"
     ["gui"]="Opens sqlitebrowser"
@@ -46,24 +65,22 @@ declare -A option_descriptions=(
 )
 
 main() {
-    DB=$(echo $CONNECTED_DB | cut -d':' -f1)
-    target_table=$(echo $CONNECTED_DB | cut -d':' -f2)
-    
     if [ $# -eq 0 ]; then default_fn; fi
 
     case "$1" in
         h?lp  ) shift ; show_help ;; #TODO preserve order
         d*bug ) shift ; debug_this_script ;; # Tested
-        -c | conn* ) shift ; connect_to_database "$@" ;; #TODO
-        -l | tables) shift ; list_tables ;; #TODO
-        -t | table ) shift ; mount_table "$@";; #TODO
+        -c | conn* | connect) shift ; connect_to_database "$@" ;; #TODO
+        -l | ls | tables  ) shift ; list_tables ;; #TODO
+        -s | sw*ch | switch ) shift ; switch_tables "$@";; #TODO
         -a | add | insert | -i) shift ; insert_sql "$@" ;; #TODO
         -m | mod | update | -u) shift ; update_sql "$@" ;; #TODO
         -d | del | delete | -d) shift ; delete_sql "$@" ;; #TODO
         -r | run | execu* | -e) shift ; execute_sql "$@" ;; #TODO
         -z | undo             ) shift ; undo_sql ;; #TODO
         -g | gui              ) shift ; open_sqlitebrowser ;; #TODO
-        set ) shift ; set_x "$@";; # set target <table-name> OR set db <dbname> OR set
+		get ) shift ; _get "$@" ;; # get attribute
+        set ) shift ; _set "$@" ;; # set target <table-name> OR set db <dbname> OR set
         sum   ) shift ; sum_columns "$@" ;; #TODO
         show  ) shift ; show_configs "$@" ;; #TODO
         -I) launch_script_in_interactive_mode "PS=sql/db/table> " ;; #TODO
@@ -86,21 +103,142 @@ main() {
 
 # Now add functions here in alphabetical order **********************************************
 
-# DML
-
-execute_sql() {
-#TODO detect sql keywords and autocapitalize
+connect_to_database() {
     if [ $# -eq 0 ]; then
-        echo "Enter SQL query (Ctrl+D when finished):"
-        query=$(cat)
-        warn "EXECUTING QUERY...."
-        sleep 1 # for dramatic effect
-        warn "RESULTS:"
-        sleep 0.9
+        warn "launching fuzzy search, please select database..."
+        sleep 0.8
+        db=$(find "$HOME" -type f -name "*.db" | fzf)
     else
-#        check_help "$@"
-        warn "EXECUTING [$*]"
+		warn "unchecked db, proceed at your own risk"
+        db="$1"
     fi
+	echo $db > "$metadata/connection"
+	echo "Connected to $db"
+	execute_query -db "$db" -m "list" -q "$query0"
+	execute_query -db "$db" -m "list" -q "$query1"
+	exit "$?"
+}
+
+debug_this_script() {
+    micro $0
+    exit "$?"
+}
+
+default_fn() {
+    if [[ $# -eq 0 ]]; then
+		connected=$(test_connection)
+		debug "connected is $connected"
+		if [[ $connected -eq 0 ]]; then
+			warn "Not connected."
+			prompt_connection
+		else
+			db=$(cat "$metadata/connection")
+			warn "Connected to $db"
+			# execute_query -db "$db" -m "list" -q "$query0"
+			execute_query -db "$db" -m "list" -q "$query1"
+		fi
+	else
+		err "iterate!!!"
+		# for arg in args
+		case0=$(test_is_globstar "$1") # * or all
+		case1=$(test_is_table    "$@")
+		case2=$(test_is_column   "$@")
+		case3=$(test_is_id       "$@") # is integer
+		case4=$(test_is_filter   "$@")
+		case5=$(test_is_sort     "$@")
+	fi
+    
+    # warn "check if $* has filter keywords"
+    # echo "SELECT * FROM $target_table"
+    exit 1
+}
+
+delete_sql() {
+    warn "Desired Usage:"
+    echo -e "
+    sql delete <filter>
+    sql delete -c [db] -t [table] <filter>
+    
+    where <filter> is a set of SQL conditions to be joined by AND/OR"
+
+    warn "if no filter provided, do filter=\$(cat) as such:"
+    echo "Provide filter (SQL conditions) [Ctrl+D]":
+    filter=$(cat)
+}
+
+execute_query() {
+	# sqlite3 -batch "$metadata/unnamed.db"                ".mode $mode" "$query" [most basic, db not provided]
+	# sqlite3 -batch "path/to/.db"                         ".mode $mode" "$query" [db provided]
+	# sqlite3 -batch "path/to/.db"          ".width x y z" ".mode $mode" "$query" [db+width provided]
+	
+	#example:
+	# sqlite3 -batch "$HOME/archives/finances/finances.db" ".mode $mode" ".width 20 3 6 6 10 5 40 3" "select * from expenses"
+	
+	# defaults
+	db=$DB
+	mode=$MODE
+	query="SELECT 'MISSING QUERY'"
+	
+	while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -db)
+                shift
+                db="$1"
+                ;;
+            -m)
+                shift
+                mode="$1"
+                ;;
+            -w)
+                shift
+                widths="$1"
+                ;;
+            -q)
+				shift
+				query="$1"
+				;;
+            *)
+                err "Unknown option: $1"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
+    # Output the values for debugging
+    debug "Value of -db: $db"
+    debug "Value of  -m: $mode"
+    debug "Value of  -w: $widths"
+	debug "Value of  -q: $query"
+	
+	# TODO add width control
+	sqlite3 -batch "$db" ".mode $mode" "$query"
+}
+
+_get() {
+	if [ $# -eq 0 ]; then err "Missing attribute"; exit 1; fi
+
+	case "$1" in
+		conn* | db) cat "$metadata/connection" ; exit "$?" ;;
+		tabl*) list_tables ; exit 1 ;;
+		*) default_fn "$@" ;; #TODO
+	esac
+}
+
+initialize() {
+    debug "Initializing..."
+    if [[ ! -d "$metadata" ]]; then
+        mkdir "$metadata"
+        touch "$metadata/connection";
+    fi
+}
+
+input_query() {
+	# Prompts user to enter an SQL query
+	#TODO detect sql keywords and 
+	echo "Enter SQL query (Ctrl+D when finished):" >&2
+    query=$(cat)
+	echo $query
 }
 
 insert_sql() {
@@ -130,78 +268,26 @@ insert_sql() {
    echo "$@" | cut -d':' -f2
 }
 
-update_sql() {
-    warn "Desired Usage:"
-        echo -e "
-        sql mod <filter> column1:value1 column2:value2 ..."
-    warn "UPDATE <table> SET ( col1 [,col2,col3] = expr )... FROM <table> WHERE con1 AND/OR con2 AND/OR"
-}
-
-delete_sql() {
-    warn "Desired Usage:"
-    echo -e "
-    sql delete <filter>
-    sql delete -c [db] -t [table] <filter>
-    
-    where <filter> is a set of SQL conditions to be joined by AND/OR"
-
-    warn "if no filter provided, do filter=\$(cat) as such:"
-    echo "Provide filter (SQL conditions) [Ctrl+D]":
-    filter=$(cat)
-}
-
-connect_to_database() {
-    if [ $# -eq 0 ]; then
-        warn "launching fuzzy search, please select database..."
-        sleep 1.12
-        db=$(fzf --query "'.db")
+list_tables() { #TODO may 20 ***********************************
+    is_connected=$(test_connection)
+    if [[ is_connected -eq 0 ]]; then
+        warn "Not connected."
     else
-        db="$1"
+		db=$(cat "$metadata/connection")
+		debug "db=$db"
+		debug "query= $query2"
+        execute_query -db "$db" -q "$query2"
     fi
-    echo "Connecting to $db"
-    #TODO
-}
-
-debug_this_script() {
-    micro $0
     exit "$?"
 }
 
-default_fn() {
-    warn "no argument means select all "
-    warn "* means select all"
-    warn "check if $1 matches the name of a table"
-    warn "check if $1 matches the name of a column"
-    warn "check if $1 is id or rowid"
-    warn "check if $* has filter keywords"
-    echo "SELECT * FROM $target_table"
+prompt_connection() {
+    echo "Would you like to connect? [y/n]"
+    err "syke, not implemented"
     exit 1
 }
 
-edit_aliases() {
-	"$EDITOR" $HOME/.aliases
-	exit "$?"
-}
-
-edit_variables() {
-	"$EDITOR" $HOME/.variables
-	exit "$?"
-}
-
-list_tables() {
-    # Test if the string is empty
-    if [ -z "$CONNECTED_DB" ]; then
-        warn NO CONNECTION
-        warn "Do sql connect to connect to db"
-    else
-        echo "CONNECTED: $DB"
-        echo "SELECTED: $target_table"
-        err "SELECT ALL TABLES FROM $DB"
-    fi
-    exit "$?"
-}
-
-set_x() {
+_set() {
     case "$1" in
         db) echo "set database $2" ;;
         ta??e*) echo "Set table/target $2" ;;
@@ -230,9 +316,48 @@ show_usage() {
 	exit 1
 }
 
+switch_tables() {
+	if [[ $# -eq 0 ]]; then err "Missing argument [table]" ; exit 1 ; fi
+	if [[ ! -d "$metadata" ]] || [[ ! -f "$metadata/connection" ]]; then warn "Not connected." ; exit 1 ; fi
+	con=$(_get "connection")
+	is_valid_table=$(test_is_table "$1")
+	if [[ ! $is_valid_table -eq 1 ]]; then err "No such table in $con"; exit 1 ; fi
+	echo "$1" > "$metadata/focal_table"
+	exit "$?"
+}
+
+test_connection() {
+	debug " --- Testing connection, return 1 if successful, 0 if not"
+    if [[ ! -d "$metadata" ]] || [[ ! -f "$metadata/connection" ]]; then
+		initialize
+		echo 0
+	else
+		db=$(cat "$metadata/connection")
+		debug "db=$db"
+		if [[ ! -f "$db" ]]; then
+			echo 0
+		else
+			echo 1
+		fi
+	fi
+	debug " --- Test over."
+}
+
+test_is_table() {
+	err "Not implemented line 344"
+}
+
+update_sql() {
+    warn "Desired Usage:"
+        echo -e "
+        sql mod <filter> column1:value1 column2:value2 ..."
+    warn "UPDATE <table> SET ( col1 [,col2,col3] = expr )... FROM <table> WHERE con1 AND/OR con2 AND/OR"
+}
+
 # Messages
-warn(){ echo -e "\e[33m$@\e[0m"; }
+debug() { if [[ $DEBUG -eq 1 ]]; then echo -e "\e[34m$@\e[0m" >&2; fi }
 err() { echo -e "\e[31m$@\e[0m" 1>&2; }
+warn(){ echo -e "\e[33m$@\e[0m"; }
 
 #warnings
 main "$@" #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -244,6 +369,9 @@ main "$@" #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 # SQL PROJECT *********************************************************************
 
 #"sqlite3 -batch {db_filepath} \".mode {Q.mode}\" \"{Q.sql}\""
+## example: sqlite3 -batch "$HOME/archives/finances/finances.db" ".mode column" ".width 20 3 6 6 10 5 40 3" "select * from expenses"
+    # DB=$(echo $CONNECTED_DB | cut -d':' -f1)
+    # target_table=$(echo $CONNECTED_DB | cut -d':' -f2)
 
 ### general commands
 
