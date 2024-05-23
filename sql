@@ -65,35 +65,36 @@ declare -A option_descriptions=(
 )
 
 main() {
-    if [ $# -eq 0 ]; then default_fn; fi
+    if [ $# -eq 0 ]; then default_function; fi
 
     case "$1" in
-        h?lp  ) shift ; show_help ;; #TODO preserve order
-        d*bug ) shift ; debug_this_script ;; # Tested
-        -c | conn* | connect) shift ; connect_to_database "$@" ;; #TODO
-        -l | ls | tables  ) shift ; list_tables ;; #TODO
-        -s | sw*ch | switch ) shift ; switch_tables "$@";; #TODO
-        -a | add | insert | -i) shift ; insert_sql "$@" ;; #TODO
-        -m | mod | update | -u) shift ; update_sql "$@" ;; #TODO
-        -d | del | delete | -d) shift ; delete_sql "$@" ;; #TODO
-        -r | run | execu* | -e) shift ; execute_sql "$@" ;; #TODO
-        -z | undo             ) shift ; undo_sql ;; #TODO
-        -g | gui              ) shift ; open_sqlitebrowser ;; #TODO
-		get ) shift ; _get "$@" ;; # get attribute
-        set ) shift ; _set "$@" ;; # set target <table-name> OR set db <dbname> OR set
-        sum   ) shift ; sum_columns "$@" ;; #TODO
-        show  ) shift ; show_configs "$@" ;; #TODO
-        -I) launch_script_in_interactive_mode "PS=sql/db/table> " ;; #TODO
-        --backup) warn ---backing up---;; #TODO
-        --dump ) warn ---dumping--- ;; #TODO
-        --mode ) warn ---changing mode--- ;; #TODO
-        --read ) warn ---read--- ;; #TODO
-        --widt*) warn "---new width: $2---" ;; #TODO
-        --alte*) warn ---altering table--- ;; #TODO
-        --atta*) warn ---attaching db--- ;; #TODO
-        --roll*) warn ---rolling back--- ;; #TODO
-        --save*) warn ---savepoint--- ;; #TODO
-        *) default_fn "$@" ;; #TODO
+        -[D]  | debug ) debug_this_script ;;
+        -[h]  | help  ) shift ; show_help "@" ;;
+        -[l]  | tables | ls   ) shift ; list_tables         ;; #TODO
+        -[c]  | connect| con* ) shift ; connect_db "$@"     ;;
+        -[s]  | select | sel* ) shift ; select_table "$@"   ;;
+        -[ia] | insert | add* ) shift ; insert_sql "$@"     ;; #TODO
+        -[m]  | update | mod* ) shift ; update_sql "$@"     ;; #TODO
+        -[d]  | delete | del* ) shift ; delete_sql "$@"     ;; #TODO
+        -[er] | execute| run* ) shift ; execute_sql "$@"    ;; #TODO
+        -[z]  | undo          ) shift ; undo_sql            ;; #TODO
+        -[g]  | gui           ) shift ; open_sqliteGUI "$@" ;; #TODO
+        set   ) shift ; _set "$@"              ;; # set target <table-name> OR set db <dbname> OR set
+		get   ) shift ; _get "$@"              ;; # get attribute
+        stat* ) shift ; _get "all"             ;; # get all attributes
+        aggr* ) shift ; list_aggregate_fn "$@" ;;
+        sum   ) shift ; sum_columns "$@"       ;; #TODO
+        show  ) shift ; show_configs "$@"      ;; #TODO 
+        --backup) warn "---backing up---"      ;; #TODO
+        --dump  ) warn "---dumping---"         ;; #TODO
+        --mode  ) warn "---changing mode---"   ;; #TODO
+        --read  ) warn "---read---"            ;; #TODO
+        --widt* ) warn "---new width: $2---"   ;; #TODO
+        --alte* ) warn "---altering table---"  ;; #TODO
+        --atta* ) warn "---attaching db---"    ;; #TODO
+        --roll* ) warn "---rolling back---"    ;; #TODO
+        --save* ) warn "---savepoint---"       ;; #TODO
+        *) unknown_arg_interpreter "$@" ;;
     esac
 
     # Process should not reach this point, if it does, maybe forgot exit
@@ -103,10 +104,19 @@ main() {
 
 # Now add functions here in alphabetical order **********************************************
 
-connect_to_database() {
+connect_db() {
+    # $ sql connect
+    # > No connection. Connect? [y/n]
+        # > y -> fzf
+        # > n -> exit
+    # > Connected to $(cat ~/.sql/connection)
+        # > No table selected
+            # > echo sql switch <table>
+        # > Table $(~/.sql/focal_table) selected || ? : sql conn help (dimmed)
     if [ $# -eq 0 ]; then
-        warn "launching fuzzy search, please select database..."
+        warn "Not connected. Connect? [y/n] : "
         sleep 0.8
+        warn "launching fuzzy search, please select database..."
         db=$(find "$HOME" -type f -name "*.db" | fzf)
     else
 		warn "unchecked db, proceed at your own risk"
@@ -124,32 +134,24 @@ debug_this_script() {
     exit "$?"
 }
 
-default_fn() {
-    if [[ $# -eq 0 ]]; then
-		connected=$(test_connection)
-		debug "connected is $connected"
-		if [[ $connected -eq 0 ]]; then
-			warn "Not connected."
-			prompt_connection
-		else
-			db=$(cat "$metadata/connection")
-			warn "Connected to $db"
-			# execute_query -db "$db" -m "list" -q "$query0"
-			execute_query -db "$db" -m "list" -q "$query1"
-		fi
+default_function() {
+    warn "Does connection exists?"
+    warn "Do tables exists?"
+    warn "Are tables selected?"
+    warn "Do rows exists?"
+    warn "What does user want?"
+    connected=$(test_connection)
+	debug "connected is $connected"
+	if [[ $connected -eq 0 ]]; then
+		warn "Not connected."
+		prompt_connection
 	else
-		err "iterate!!!"
-		# for arg in args
-		case0=$(test_is_globstar "$1") # * or all
-		case1=$(test_is_table    "$@")
-		case2=$(test_is_column   "$@")
-		case3=$(test_is_id       "$@") # is integer
-		case4=$(test_is_filter   "$@")
-		case5=$(test_is_sort     "$@")
+		db=$(cat "$metadata/connection")
+		warn "Connected to $db"
+		# execute_query -db "$db" -m "list" -q "$query0"
+		execute_query -db "$db" -m "list" -q "$query1"
 	fi
-    
-    # warn "check if $* has filter keywords"
-    # echo "SELECT * FROM $target_table"
+	err "error in default_function"
     exit 1
 }
 
@@ -287,6 +289,16 @@ prompt_connection() {
     exit 1
 }
 
+select_table() {
+	if [[ $# -eq 0 ]]; then err "Missing argument [table]" ; exit 1 ; fi
+	if [[ ! -d "$metadata" ]] || [[ ! -f "$metadata/connection" ]]; then warn "Not connected." ; exit 1 ; fi
+	con=$(_get "connection")
+	is_valid_table=$(test_is_table "$1")
+	if [[ ! $is_valid_table -eq 1 ]]; then err "No such table in $con"; exit 1 ; fi
+	echo "$1" > "$metadata/focal_table"
+	exit "$?"
+}
+
 _set() {
     case "$1" in
         db) echo "set database $2" ;;
@@ -316,16 +328,6 @@ show_usage() {
 	exit 1
 }
 
-switch_tables() {
-	if [[ $# -eq 0 ]]; then err "Missing argument [table]" ; exit 1 ; fi
-	if [[ ! -d "$metadata" ]] || [[ ! -f "$metadata/connection" ]]; then warn "Not connected." ; exit 1 ; fi
-	con=$(_get "connection")
-	is_valid_table=$(test_is_table "$1")
-	if [[ ! $is_valid_table -eq 1 ]]; then err "No such table in $con"; exit 1 ; fi
-	echo "$1" > "$metadata/focal_table"
-	exit "$?"
-}
-
 test_connection() {
 	debug " --- Testing connection, return 1 if successful, 0 if not"
     if [[ ! -d "$metadata" ]] || [[ ! -f "$metadata/connection" ]]; then
@@ -345,6 +347,22 @@ test_connection() {
 
 test_is_table() {
 	err "Not implemented line 344"
+}
+
+unknown_arg_interpreter(){
+    # for arg in args
+    warn 'Is arg a "*"?'
+    warn 'Is arg a table?'
+    warn 'Is arg a column?'
+    warn 'Is arg an identifier?'
+    warn 'Is arg a sort keyword?'
+    warn 'Is arg a filter keyword?'
+    case0=$(test_is_globstar "$1") # * or all
+    case1=$(test_is_table    "$@")
+    case2=$(test_is_column   "$@")
+    case3=$(test_is_id       "$@") # is integer
+    case4=$(test_is_filter   "$@")
+    case5=$(test_is_sort     "$@")
 }
 
 update_sql() {
