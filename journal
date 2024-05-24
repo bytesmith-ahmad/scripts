@@ -13,18 +13,23 @@ declare -A option_descriptions=(
 
 # configs
 debug=0
+settings="$HOME/rc-files/jrnl.yaml"
 JOURNAL="$HOME/journal"
 editor="notepad.exe"
+jrnl='/home/ahmad/.local/pipx/venvs/jrnl/bin/jrnl'
 
 function main() {
-    if [ "$#" -eq 0 ]; then jrnl; fi
+    if [ "$#" -eq 0 ]; then "$jrnl"; exit "$?"; fi
     case "$1" in
-        help | -h) show_help ;;
-        debug| -d) debug_this_script ;;
-        sync | -s) push_to_github ;;
-        *) jrnl "$@" ;;
+        help  | -h) show_help ;;
+        debug | -d) debug_this_script ;;
+        config| -c) config_jrnl "@" ;;
+        sync  | -s) push_to_github "@" ;;
+        *) "$jrnl" "$@" ; exit "$?";;
     esac
 }
+
+config_jrnl() { "$EDITOR" "$settings"; }
 
 debug() {
     # show debug message if enabled
@@ -67,7 +72,6 @@ open_journal_for_date() {
 }
 
 push_to_github() {
-    warn "--- Do not forget to pull first ---"
     git -C "$JOURNAL" add .
     git -C "$JOURNAL" commit -m "Sent from $NAME"
     git -C "$JOURNAL" push
