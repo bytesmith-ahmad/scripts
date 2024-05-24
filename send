@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo -n "arch: "
+arch -g push
+echo -n "bill: "
+bill sync
+#bin sync
+#j sync
+echo -n "pass: "
+pass git push
+#rc-files sync
+echo -n "task: "
+tk sync

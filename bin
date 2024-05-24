@@ -19,27 +19,38 @@ main() {
     if [ $# -eq 0 ]; then
         cd $bin_path
         pwd
-        ls
+        ls --color
+        warn "> bin [help,debug,git,bash,find,status,add,commit,push]"
         exit 0
     fi
     case "$1" in
-        -h | h?lp     ) shift ; show_help ;; #TODO preserve order
-        -[dD] | d*bug ) shift ; debug_this_script ;;
-        -g | git      ) shift ; execute_git "$@" ;;
+        -[h]  | help  ) shift ; show_help         ;;
+        -[d]  | debug ) shift ; debug_script      ;;
+        -[g]  | git   ) shift ; execute_git  "$@" ;;
+        -[bx] | bash  ) shift ; execute_bash "$@" ;;
+        -[fp] | find  ) shift ; grep_ls      "$@" ;;
+        pwd ) cd "$bin_path" ; pwd ;;
         status | diff | add | commit | push ) execute_git "$@" ;;
-        *) cd $bin_path ; "$@" ; exit "$?" ;;
+        *) grep_ls "$@" ;;
     esac
 }
 
 # Now add functions here in alphabetical order **********************************************
 
-debug_this_script() { "$EDITOR" $0 ; exit "$?" ; }
+debug_script() { "$EDITOR" $0 ; exit "$?" ; }
+
+execute_bash(){
+    cd $bin_path
+    "$@"
+    exit "$?"
+}
 
 execute_git(){
-	echo -e "CURRENT LOCATION: $bin_path"
 	git -C $bin_path "$@"
 	exit "$?"
 }
+
+grep_ls() { ls "$bin_path" | grep --color=always "$@" ; }
 
 # Help function to display usage information and option descriptions
 show_help() {
@@ -56,14 +67,10 @@ show_help() {
     exit 0
 }
 
-show_usage() {
-	warn 'edit aliases|variables|debug|help|...'
-	exit 1
-}
-
-# Messages
+# messages
+show_usage() { warn "> bin [help,debug,git,bash,find,status,add,commit,push]"; }
 warn(){ echo -e "\e[33m$@\e[0m"; }
 err() { echo -e "\e[31m$@\e[0m" 1>&2; }
+# ---
 
-#warnings
 main "$@"

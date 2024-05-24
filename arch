@@ -75,7 +75,6 @@ execute_command() {
 }
 
 execute_git(){
-	echo -e "CURRENT LOCATION: $path"
 	git -C "$path" "$@"
 	exit "$?"
 }
@@ -150,9 +149,9 @@ open_this_file() {
 }
 
 push_to_github() {
-    git -C $archives_path add .
-    git -C $archives_path commit -m "sent from $NAME"
-    git -C $archives_path push
+    git -C "$path" add .
+    git -C "$path" commit -m "sent from $NAME"
+    git -C "$path" push
     exit "$?"
 }
 
