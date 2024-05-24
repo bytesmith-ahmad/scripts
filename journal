@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# My journal for recording thoughts quickly
+# Wrapper for jrnl
 
 # Define an associative array to store option descriptions
 declare -A option_descriptions=(
@@ -16,30 +16,14 @@ debug=0
 JOURNAL="$HOME/journal"
 editor="notepad.exe"
 
-# Main function
 function main() {
-    # Case 1: If no arguments provided, open today's journal
-    if [ "$#" -eq 0 ]; then
-        open_today_journal
-        exit 0
-    fi
-    
+    if [ "$#" -eq 0 ]; then jrnl; fi
     case "$1" in
-        # help
-        -h | h?lp | --help) show_help ;;
-        #debug
-        d?b?g | db?g) debug_this_script ;;
-        # sync
-        sync) push_to_github ;;
-        # read
-        read) show_entry "$2";;
-        # other
-        *) open_journal_for_date "$1" ;;
+        help | -h) show_help ;;
+        debug| -d) debug_this_script ;;
+        sync | -s) push_to_github ;;
+        *) jrnl "$@" ;;
     esac
-
-    # Process should not reach this point, if it does, maybe forgot exit
-    echo -e "\e[31mERROR\e[0m" >&2
-    show_usage
 }
 
 debug() {
@@ -121,8 +105,4 @@ show_usage() {
 
 warn() { echo -e "\e[33m$@\e[0m"; }
 
-git config --global user.name "Bytesmith Ahmad"
-
-# Call the main function with provided arguments
-git -C "$JOURNAL" pull
 main "$@"
