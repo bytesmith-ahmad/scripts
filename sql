@@ -10,27 +10,24 @@ warnings() {
 
 # CONFIG ***************************************************************************************
 	# toggle debugging info
-		DEBUG=0
-	# metadata location
-		metadata="$HOME/.sql"
+		DEBUG=1
+	# home location of metadata
+		home="$HOME/.sql"
 	# default values
-		DB="$metadata/unnamed.db"
+		DB="$home/unnamed.db"
 		MODE="column"
-	# pragmas
-		pragma1='PRAGMA count_changes = true'
-		pragma2='PRAGMA ...'
-		pragma3='PRAGMA ...'
-	# queries
+	# prepared queries
+        # print feedback on update
+		count_changes_pragma='PRAGMA count_changes = true'
+        # Get schema version
+		schema_version_pragma='PRAGMA schema_version'
 		# Fetch version
-		query0="SELECT 'SQLite version ' || sqlite_version() AS ''" # mode=list
+		sqite_version_query="SELECT 'SQLite version ' || sqlite_version() AS ''" # mode=list
 		# Count tables and views
-		query1="SELECT count(name) || ' tables found.' AS '' FROM sqlite_master WHERE type='table' OR type='view'" # mode=list
+		table_count_query="SELECT count(name) || ' tables found.' AS '' FROM sqlite_master WHERE type='table' OR type='view'" # mode=list
 		# List tables
-		query2="SELECT name AS 'Tables' FROM sqlite_schema WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY 1"
+		table_list_query="SELECT name AS 'Tables' FROM sqlite_schema WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY 1"
 		# ...
-		query3=""
-		# ...
-		query4=""
 
 # Define an associative array to store option descriptions
 # TODO make function for this
@@ -105,28 +102,49 @@ main() {
 # Now add functions here in alphabetical order **********************************************
 
 connect_db() {
-    # $ sql connect
-    # > No connection. Connect? [y/n]
-        # > y -> fzf
-        # > n -> exit
-    # > Connected to $(cat ~/.sql/connection)
-        # > No table selected
-            # > echo sql switch <table>
-        # > Table $(~/.sql/focal_table) selected || ? : sql conn help (dimmed)
+    # Case 1: $ sql connect
+        # No connection. > Connect? [y/n]
+            # y > fzf > msg > exit
+            # n > exit
+        # Yes connection > Connected to $(cat ~/.sql/connection). Found <#> tables. <None|<selection>> selected.
+            # No tables  > create one?
+                # y > launch gui > exit
+                # n > exit
+            # Yes tables
+                # Not selected > select table?
+                    # y > launch_menu
+                    # n > exit
+                # Selected > exit
+    # Case 2: $ sql connect <path>
+        # > Connect to <path>?
+            # no > exit
+            # yes > attempt connection > handle extra cases...
     if [ $# -eq 0 ]; then
-        warn "Not connected. Connect? [y/n] : "
-        sleep 0.8
-        warn "launching fuzzy search, please select database..."
-        db=$(find "$HOME" -type f -name "*.db" | fzf)
+        is_connected=$(test_connection)
+        debug "is_connected = $is_connected"
+        if [[ is_connected -eq 0 ]]
+            then connect_dialog=1
+            else find_tables=1
+        fi
     else
 		warn "unchecked db, proceed at your own risk"
         db="$1"
     fi
-	echo $db > "$metadata/connection"
-	echo "Connected to $db"
-	execute_query -db "$db" -m "list" -q "$query0"
-	execute_query -db "$db" -m "list" -q "$query1"
-	exit "$?"
+
+    if [[ connect_dialog -eq 1 ]]; then
+        echo "you have reached the connect  dialaog. Conenct? [y/n] "
+        warn "assuming yes..."
+        warn "launching fuzzy search, please select database..."
+        db=$(find "$HOME" -type f -name "*.db" | fzf)
+    fi
+    if [[ find_tables -eq 1 ]]; then
+        echo "now I should be finding the tables if any"
+    fi
+	# echo $db > "$home/connection"
+	# echo "Connected to $db"
+	# execute_query -c "$db" -m "list" -q "$sqite_version_query"
+	# execute_query -c "$db" -m "list" -q "$query1"
+	# exit "$?"
 }
 
 debug_this_script() {
@@ -136,9 +154,11 @@ debug_this_script() {
 
 default_function() {
     warn "Does connection exists?"
+    # test_connection
     warn "Do tables exists?"
+    # list_tables
     warn "Are tables selected?"
-    warn "Do rows exists?"
+    # test_selection
     warn "What does user want?"
     connected=$(test_connection)
 	debug "connected is $connected"
@@ -146,10 +166,10 @@ default_function() {
 		warn "Not connected."
 		prompt_connection
 	else
-		db=$(cat "$metadata/connection")
+		db=$(cat "$home/connection")
 		warn "Connected to $db"
-		# execute_query -db "$db" -m "list" -q "$query0"
-		execute_query -db "$db" -m "list" -q "$query1"
+		# execute_query -c "$db" -m "list" -q "$sqite_version_query"
+		execute_query -c "$db" -m "list" -q "$query1"
 	fi
 	err "error in default_function"
     exit 1
@@ -169,7 +189,7 @@ delete_sql() {
 }
 
 execute_query() {
-	# sqlite3 -batch "$metadata/unnamed.db"                ".mode $mode" "$query" [most basic, db not provided]
+	# sqlite3 -batch "$home/unnamed.db"                ".mode $mode" "$query" [most basic, db not provided]
 	# sqlite3 -batch "path/to/.db"                         ".mode $mode" "$query" [db provided]
 	# sqlite3 -batch "path/to/.db"          ".width x y z" ".mode $mode" "$query" [db+width provided]
 	
@@ -177,15 +197,15 @@ execute_query() {
 	# sqlite3 -batch "$HOME/archives/finances/finances.db" ".mode $mode" ".width 20 3 6 6 10 5 40 3" "select * from expenses"
 	
 	# defaults
-	db=$DB
+	con=$DB
 	mode=$MODE
 	query="SELECT 'MISSING QUERY'"
 	
 	while [[ $# -gt 0 ]]; do
         case "$1" in
-            -db)
+            -c)
                 shift
-                db="$1"
+                con="$1"
                 ;;
             -m)
                 shift
@@ -208,20 +228,20 @@ execute_query() {
     done
 
     # Output the values for debugging
-    debug "Value of -db: $db"
-    debug "Value of  -m: $mode"
-    debug "Value of  -w: $widths"
-	debug "Value of  -q: $query"
+    debug "Value of -c: $con"
+    debug "Value of -m: $mode"
+    debug "Value of -w: $widths"
+	debug "Value of -q: $query"
 	
 	# TODO add width control
-	sqlite3 -batch "$db" ".mode $mode" "$query"
+	sqlite3 "$con" ".mode $mode" "$query" -batch
 }
 
 _get() {
 	if [ $# -eq 0 ]; then err "Missing attribute"; exit 1; fi
 
 	case "$1" in
-		conn* | db) cat "$metadata/connection" ; exit "$?" ;;
+		conn* | db) cat "$home/connection" ; exit "$?" ;;
 		tabl*) list_tables ; exit 1 ;;
 		*) default_fn "$@" ;; #TODO
 	esac
@@ -229,9 +249,9 @@ _get() {
 
 initialize() {
     debug "Initializing..."
-    if [[ ! -d "$metadata" ]]; then
-        mkdir "$metadata"
-        touch "$metadata/connection";
+    if [[ ! -d "$home" ]]; then
+        mkdir "$home"
+        touch "$home/connection";
     fi
 }
 
@@ -275,10 +295,10 @@ list_tables() { #TODO may 20 ***********************************
     if [[ is_connected -eq 0 ]]; then
         warn "Not connected."
     else
-		db=$(cat "$metadata/connection")
+		db=$(cat "$home/connection")
 		debug "db=$db"
-		debug "query= $query2"
-        execute_query -db "$db" -q "$query2"
+		debug "query= $table_list_query"
+        execute_query -c "$db" -q "$table_list_query"
     fi
     exit "$?"
 }
@@ -291,11 +311,11 @@ prompt_connection() {
 
 select_table() {
 	if [[ $# -eq 0 ]]; then err "Missing argument [table]" ; exit 1 ; fi
-	if [[ ! -d "$metadata" ]] || [[ ! -f "$metadata/connection" ]]; then warn "Not connected." ; exit 1 ; fi
+	if [[ ! -d "$home" ]] || [[ ! -f "$home/connection" ]]; then warn "Not connected." ; exit 1 ; fi
 	con=$(_get "connection")
 	is_valid_table=$(test_is_table "$1")
 	if [[ ! $is_valid_table -eq 1 ]]; then err "No such table in $con"; exit 1 ; fi
-	echo "$1" > "$metadata/focal_table"
+	echo "$1" > "$home/focal_table"
 	exit "$?"
 }
 
@@ -330,15 +350,17 @@ show_usage() {
 
 test_connection() {
 	debug " --- Testing connection, return 1 if successful, 0 if not"
-    if [[ ! -d "$metadata" ]] || [[ ! -f "$metadata/connection" ]]; then
-		initialize
-		echo 0
+    con_file="$home/connection"
+    if [[ ! -f "$con_file" ]]; then
+        debug "$con_file does not exist"
+        echo 0
 	else
-		db=$(cat "$metadata/connection")
-		debug "db=$db"
-		if [[ ! -f "$db" ]]; then
-			echo 0
+		con=$(cat "$con_file")
+		debug "db name is $con"
+		if [[ -z "$con" ]]; then echo 0
 		else
+            schema_version=$(execute_query -c "$con" -m "line" -q "$schema_version_pragma") 
+            echo "$schema_version" >&2
 			echo 1
 		fi
 	fi
