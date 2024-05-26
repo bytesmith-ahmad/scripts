@@ -1,16 +1,7 @@
 #!/bin/bash
 
-# symlinks manager
+# reverses the order of TARGET and LINK_NAME in command `ln`
 
-warnings() {
-    warn "add usage case for each function"
-    warn "Concept only.
-    documentation incomplete
-    functions incomplete"
-}
-
-# Define an associative array to store option descriptions
-# TODO make function for this
 declare -A option_descriptions=(
     [" "]="What happens if no arg given?"
     ["help"]="Display a help message"
@@ -20,14 +11,11 @@ declare -A option_descriptions=(
 )
 
 main() {
-    DB=$(echo $CONNECTED_DB | cut -d':' -f1)
-    target_table=$(echo $CONNECTED_DB | cut -d':' -f2)
-    
     if [ $# -eq 0 ]; then show_usage; fi
 
     case "$1" in
-            -h | h?lp  ) shift ; show_help ;; #TODO preserve order
-            -d | d*bug ) shift ; debug_this_script ;; # Tested
+            -h | h?lp  ) shift ; show_help ;;
+            -d | d*bug ) shift ; debug_this_script ;;
             -from | from) shift ; default_fn "$@" ;;
             *) default_fn "$@" ;;
     esac
@@ -81,17 +69,18 @@ default_fn() {
     esac
     
     # Create the symlink and capture stderr
-    stderr=$(ln -siv "$target" "$linkname" 2>&1)
-    exitstat="$?"
-    
-    # Check exit status and log appropriately
-    if [[ $exitstat -eq 0 ]]; then
-        warn "Created symlink $linkname ---> $target"
-        exit 0
-    else
-        err "ERROR: $stderr"
-        exit $exitstat
-    fi
+    ln -siv "$target" "$linkname"
+    # exitstat="$?"
+    # 
+    # # Check exit status and log appropriately
+    # if [[ $exitstat -eq 0 ]]; then
+        # warn "Created symlink $linkname ---> $target"
+        # exit 0
+    # else
+        # err "ERROR: $stderr"
+        # exit $exitstat
+    # fi
+    exit "$?"
 }
 
 # Help function to display usage information and option descriptions

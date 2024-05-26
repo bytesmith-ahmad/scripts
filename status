@@ -1,5 +1,14 @@
 #!/bin/bash
 
+echo -e "The following is an example of behaviour only:"
+echo -e "SYSTEM: $SYSTEM"
+echo -e "CONTEXT: $CONTEXT"
+echo -e "CONNECTED TO: $DATABASE"
+echo -e "ASSIGNMENTS: overdue"
+echo -e "BILLS: overdue"
+echo -e "TASKS: overdue"
+echo -e "REPOSITORIES: REMOTE OUTDATED"
+
 yellow="\e[93m"
 _0="\e[0m"
 separator="********************************************************************************"

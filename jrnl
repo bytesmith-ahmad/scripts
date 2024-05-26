@@ -13,23 +13,31 @@ declare -A option_descriptions=(
 
 # configs
 debug=0
+CONTEXT=$(get context)
 settings="$HOME/rc-files/jrnl.yaml"
+settings_wsl="$HOME/rc-files/jrnl-WSL.yaml"
 JOURNAL="$HOME/journal"
+REPO_NAME="$HOME/journal"
 editor="notepad.exe"
 jrnl='/home/ahmad/.local/pipx/venvs/jrnl/bin/jrnl'
 
 function main() {
     if [ "$#" -eq 0 ]; then "$jrnl"; exit "$?"; fi
     case "$1" in
-        help  | -h) show_help ;;
-        debug | -d) debug_this_script ;;
-        config| -c) config_jrnl "@" ;;
-        sync  | -s) push_to_github "@" ;;
+        help  | -h) shift; show_help ;;
+        debug | -d) shift; debug_this_script ;;
+        config| -c) shift; config_jrnl "$@" ;;
+        sync  | -s) shift; push_to_github "$@" ;;
+        update| -u) shift; update_journals "$@" ;;
+        log   | -l) shift; jrnl --config-override editor "" ;;
         *) "$jrnl" "$@" ; exit "$?";;
     esac
 }
 
-config_jrnl() { "$EDITOR" "$settings"; }
+config_jrnl() {
+    if [[ $(systemd-detect-virt) == "wsl" ]]; then wsl='true' ; fi
+    if [[ $wsl == 'true' ]]; then "$EDITOR" "$settings_wsl"; else "$EDITOR" "$settings"; fi
+}
 
 debug() {
     # show debug message if enabled
@@ -105,6 +113,11 @@ show_usage() {
     echo "Case 1: $0"
     echo "Case 2: $0 <date>"
     exit 1
+}
+
+update_journals() {
+    # delegate update logic to journals repo
+    "$REPO_NAME/update"
 }
 
 warn() { echo -e "\e[33m$@\e[0m"; }
