@@ -81,7 +81,7 @@ default_fn() {
     esac
     
     # Create the symlink and capture stderr
-    stderr=$(ln -s "$target" "$linkname" 2>&1)
+    stderr=$(ln -siv "$target" "$linkname" 2>&1)
     exitstat="$?"
     
     # Check exit status and log appropriately
@@ -92,64 +92,6 @@ default_fn() {
         err "ERROR: $stderr"
         exit $exitstat
     fi
-}
-
-# default_fn() {
-    # case "$1" in
-        # to | -to) err "Missing link name" ; exit 1 ;;
-        # *) linkname="$1" ;;
-    # esac
-    # case "$2" in
-        # to | -to | -->) target="$3" ;;
-        # *) target="$2" ;;
-    # esac
-# 
-    # stderr=$(ln -s "$target" "$linkname" 2>&1)
-    # exitstat="$?"
-# 
-    # if [[ $exitstat -eq 0 ]]; then
-       # warn "Created symlink $linkname \-\> $target"
-    # else
-        # err "ERROR: $stderr"
-    # fi
-# }
-
-edit_aliases() {
-	"$EDITOR" $HOME/.aliases
-	exit "$?"
-}
-
-edit_variables() {
-	"$EDITOR" $HOME/.variables
-	exit "$?"
-}
-
-execute_git(){
-	echo -e "CURRENT LOCATION: $bin_path"
-	git -C $bin_path "$@"
-	exit "$?"
-}
-
-list_tables() {
-    # Test if the string is empty
-    if [ -z "$CONNECTED_DB" ]; then
-        warn NO CONNECTION
-        warn "Do sql connect to connect to db"
-    else
-        echo "CONNECTED: $DB"
-        echo "SELECTED: $target_table"
-        err "SELECT ALL TABLES FROM $DB"
-    fi
-    exit "$?"
-}
-
-set_x() {
-    case "$1" in
-        db) echo "set database $2" ;;
-        ta??e*) echo "Set table/target $2" ;;
-        *) echo "set $*" ;;
-    esac
-#    exit 1
 }
 
 # Help function to display usage information and option descriptions
