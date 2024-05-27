@@ -32,6 +32,7 @@ main() {
         help | --help) help ;;
         open) warn "Not implemented." ; exit 1 ;;
         sync) synchronize ;;
+        push) push_to_github "Sent from $HOSTNAME" ;;
         *) execute_and_push "$@" ;;
     esac
 
