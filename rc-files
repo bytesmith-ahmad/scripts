@@ -11,6 +11,8 @@ warnings() {
 
 ## configurations *********************************
 bin_path="$HOME/rc-files"
+DOMAIN="$HOME/rc-files"
+# ***************************************************
 
 # Define an associative array to store option descriptions
 # TODO make function for this
@@ -25,17 +27,14 @@ declare -A option_descriptions=(
     ["*"]="Default function"
 )
 
-main() {
-    DB=$(echo $CONNECTED_DB | cut -d':' -f1)
-    target_table=$(echo $CONNECTED_DB | cut -d':' -f2)
-    
-    if [ $# -eq 0 ]; then default_fn; fi
-
+main() {    
     case "$1" in
+        "") default_fn ;;
         -h | h?lp  ) shift ; show_help ;; #TODO preserve order
         -D | d*bug ) shift ; debug_this_script ;; # Tested
         -g | git  ) shift ; execute_git "$@" ;;
-        status | diff | add | commit | push ) execute_git "$@" ;;
+        status | diff | add | commit) execute_git "$@" ;;
+        push) shift ; push_to_remote "$@" ;;
         *) default_fn "$@" ;; #TODO
     esac
 
@@ -62,42 +61,17 @@ default_fn() {
     exit 1
 }
 
-edit_aliases() {
-	"$EDITOR" $HOME/.aliases
-	exit "$?"
-}
-
-edit_variables() {
-	"$EDITOR" $HOME/.variables
-	exit "$?"
-}
-
 execute_git(){
-	echo -e "CURRENT LOCATION: $bin_path"
-	git -C $bin_path "$@"
+	git -C "$DOMAIN" "$@"
 	exit "$?"
 }
 
-list_tables() {
-    # Test if the string is empty
-    if [ -z "$CONNECTED_DB" ]; then
-        warn NO CONNECTION
-        warn "Do sql connect to connect to db"
-    else
-        echo "CONNECTED: $DB"
-        echo "SELECTED: $target_table"
-        err "SELECT ALL TABLES FROM $DB"
-    fi
-    exit "$?"
-}
 
-set_x() {
-    case "$1" in
-        db) echo "set database $2" ;;
-        ta??e*) echo "Set table/target $2" ;;
-        *) echo "set $*" ;;
-    esac
-#    exit 1
+push_to_remote() {
+    git -C "$DOMAIN" add .
+    git -C "$DOMAIN" commit "$@"
+    git -C "$DOMAIN" push
+    exit "$?"
 }
 
 # Help function to display usage information and option descriptions
