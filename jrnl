@@ -2,6 +2,49 @@
 
 # Wrapper for jrnl
 
+# configs ******************************************************************************************
+DEBUG=0
+DOMAIN="$HOME/journal"
+CONFIG="$DOMAIN/jrnl.yaml"
+CONFIG_WSL="$DOMAIN/jrnl-WSL.yaml"
+CONTEXT="$DOMAIN/.context"
+jrnl="$HOME/.local/pipx/venvs/jrnl/bin/jrnl" # True command
+# **************************************************************************************************
+
+# ADD TO STANDARD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# shopt -s extglob
+# for arg in apple be cd meet o mississippi
+# do
+#     # call functions based on arguments
+#     case "$arg" in
+#         a*             ) foo;;    # matches anything starting with "a"
+#         b?             ) bar;;    # matches any two-character string starting with "b"
+#         c[de]          ) baz;;    # matches "cd" or "ce"
+#         me?(e)t        ) qux;;    # matches "met" or "meet"
+#         @(a|e|i|o|u)   ) fuzz;;   # matches one vowel
+#         m+(iss)?(ippi) ) fizz;;   # matches "miss" or "mississippi" or others
+#         *              ) bazinga;; # catchall, matches anything not matched above
+#     esac
+# done
+
+
+function main() {
+    # if [ "$#" -eq 0 ]; then "$jrnl"; exit "$?"; fi
+    case "$1" in
+        "")   new_entry "$@" ;;
+        '?' ) print_info ;; # such as context
+        '.' ) view_journal_today "$@" ;;
+        '..') view_journal_yesterday "$@" ;;
+        help   | -h) shift; print_help ;;
+        debug  | -D) shift; debug_code "$@" ;;
+        git    | -g) shift; execute_git "$@" ;;
+        config | -C) shift; config_jrnl "$@" ;;
+        context| -c) shift; context "$@" ;;
+        update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
+        *) execute_true_jrnl "$@" ;;
+    esac
+}
+
 # Define an associative array to store option descriptions
 declare -A option_descriptions=(
     [" "]="Opens today\'s journal in $VISUAL"
@@ -11,89 +54,108 @@ declare -A option_descriptions=(
     ["read [date]"]="read entry for given date" 
 )
 
-# configs
-debug=0
-CONTEXT=$(get context)
-settings="$HOME/rc-files/jrnl.yaml"
-settings_wsl="$HOME/rc-files/jrnl-WSL.yaml"
-JOURNAL="$HOME/journal"
-REPO_NAME="$HOME/journal"
-editor="notepad.exe"
-jrnl='/home/ahmad/.local/pipx/venvs/jrnl/bin/jrnl'
-
-function main() {
-    if [ "$#" -eq 0 ]; then "$jrnl"; exit "$?"; fi
-    case "$1" in
-        help  | -h) shift; show_help ;;
-        debug | -d) shift; debug_this_script ;;
-        config| -c) shift; config_jrnl "$@" ;;
-        sync  | -s) shift; push_to_github "$@" ;;
-        update| -u) shift; update_journals "$@" ;;
-        log   | -l) shift; jrnl --config-override editor "" ;;
-        *) "$jrnl" "$@" ; exit "$?";;
-    esac
+config_jrnl() {
+    if [[ $(systemd-detect-virt) == "wsl" ]]; then
+        "$EDITOR" "$CONFIG_WSL"
+    else
+        "$EDITOR" "$CONFIG"
+    fi
 }
 
-config_jrnl() {
-    if [[ $(systemd-detect-virt) == "wsl" ]]; then wsl='true' ; fi
-    if [[ $wsl == 'true' ]]; then "$EDITOR" "$settings_wsl"; else "$EDITOR" "$settings"; fi
+context() {
+    context_value=$(get_context)
+    case "$1" in
+        "")                           print_selected_journal=1 ;;
+        -l | list)                    list_context=1 ;;
+        -n | none)                    set_context='none' ;;
+        -a | acad | college | school) set_context='academic' ;;
+        -w | work)                    set_context='work' ;;
+        *)                            warn 'Usage: $ jrnl context [ list | none | acad | work ]'; exit 1 ;;
+    esac
+    if [[ -n $print_selected_journal ]]; then
+        case "$context_value" in
+            none)     warn "Primary journal selected." ;;
+            academic) warn "Academic journal selected." ;;
+            work)     warn "Work journal selected." ;;
+            *)        err  "No journal named $context_value exists." ; exit 1 ;;
+        esac
+    elif [[ -n $list_context ]]; then
+        echo -e "-none\n-academic\n-work"
+    elif [[ -n $set_context ]]; then
+        echo "$set_context" > "$CONTEXT"
+        warn "Context set to [$set_context]"
+    fi
 }
 
 debug() {
     # show debug message if enabled
-    if [[ $debug -eq 1 ]]; then
+    if [[ $DEBUG -eq 1 ]]; then
         echo -e "\e[36m$@\e[0m"
     fi
 }
 
-debug_this_script() {
-    micro $0
+debug_code() {
+    if [[ -n "$@" ]]
+        then editor="$@"
+        else editor="micro"
+    fi
+    "$editor" "$0"
     exit "$?"
 }
 
-# Function to get today's date in YYYY-MM-DD format
-get_today_date() {
-    date +"%Y-%m-%d"
+execute_git() {
+    git -C "$DOMAIN" "$@"
 }
 
-# Function to open the journal file for today's date using the default editor
-open_today_journal() {
-    local today_date=$(get_today_date)
-    local journal_file="$JOURNAL/$today_date"
-    if [ -e $journal_file ]; then
-        "$editor" "$journal_file" &
+execute_true_jrnl() {
+    context
+    C=$(get_context)
+    if [[ $C == 'none' ]]; then C='primary'; fi
+    "$jrnl" "$C" "$@"
+
+    #confirmation code
+    # warn "Do you want to execute $jrnl $C $@ ? [Y/n] "
+    # read -r answer
+    # 
+    # if [ -z "$answer" ]; then
+        # answer="yes"  # Default to "yes" if user just presses Enter
+    # fi
+    # 
+    # if [ "$answer" == "yes" ] || [ "$answer" == "y" ]; then
+        # $jrnl $C $@
+    # elif [ "$answer" == "no" ] || [ "$answer" == "n" ]; then
+        # echo "Exiting..."
+        # # Do nothing, just exit
+    # else
+        # echo "Invalid input. Defaulting to 'no'."
+        # echo "Exiting..."
+        # # Do nothing, just exit
+    # fi
+}
+
+get_context() {
+    if [[ ! -f "$CONTEXT" ]]; then
+        echo "none" > "$CONTEXT"
+        echo "none"
     else
-        echo "# $(date +"%T")" > $journal_file
-        "$editor" "$journal_file" &
+        cat "$CONTEXT"
     fi
 }
 
-# Function to open the journal file for a specific date
-open_journal_for_date() {
-    local journal_date="$1"
-    local journal_file="$JOURNAL/$journal_date"
-    if [ "$journal_date" = "$(get_today_date)" ]; then
-        "$editor" "$journal_file" &
-    else
-        batcat "$journal_file"
-    fi
+new_entry() {
+    context
+    C=$(get_context)
+    if [[ $C == 'none' ]]; then C='primary'; fi
+    "$jrnl" "$C" --config-override editor ""
 }
 
-push_to_github() {
-    git -C "$JOURNAL" add .
-    git -C "$JOURNAL" commit -m "Sent from $NAME"
-    git -C "$JOURNAL" push
-    exit "$?"
-}
-
-show_entry() {
-    debug "Receive \$1 is $1"
-    batcat "$JOURNAL/$1"
-    exit "$?"
+print_info() {
+    context
+    # more info here
 }
 
 # Help function to display usage information and option descriptions
-show_help() {
+print_help() {
     # ANSI color codes for colors without using \e[33m and \e[31m
     GREEN='\033[0;32m'
     BLUE='\033[0;34m'
@@ -107,19 +169,21 @@ show_help() {
     exit 0
 }
 
-show_usage() {
-    # Display usage instructions if incorrect number of arguments provided
-    echo "Usage:"
-    echo "Case 1: $0"
-    echo "Case 2: $0 <date>"
-    exit 1
-}
+view_journal_today() {
+    context
+    C=$(get_context)
+    if [[ $C == 'none' ]]; then C='primary'; fi
+    "$jrnl" "$C" -on today --edit
+ }
 
-update_journals() {
-    # delegate update logic to journals repo
-    "$REPO_NAME/update"
+view_journal_yesterday() {
+    context
+    C=$(get_context)
+    if [[ $C == 'none' ]]; then C='primary'; fi
+    "$jrnl" "$C" -on yesterday --edit
 }
 
 warn() { echo -e "\e[33m$@\e[0m"; }
+err()  { echo -e "\e[31m$@\e[0m" >&2; }
 
 main "$@"
