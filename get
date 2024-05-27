@@ -4,14 +4,9 @@
 
 # warnings() {}
 
-# CONFIG ***************************************************************************************
-	# toggle debugging info
+# CONFIG **********************************************************************
 		DEBUG=1
-	# area of operation for this script
 		DOMAIN="$HOME/.get"
-	# default values
-		#none
-	
 
 # Define an associative array to store option descriptions
 # TODO make function for this
@@ -23,9 +18,8 @@ declare -A option_descriptions=(
 )
 
 main() {
-    if [ $# -eq 0 ]; then list_options; fi
-
     case "$1" in
+        "") list_options ;;
         debug   | -d) debug_this_script ;;
         help    | -h) shift ; show_help "@" ;;
         connection | database | table) sql get ;;
