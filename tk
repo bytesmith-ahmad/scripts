@@ -2,7 +2,12 @@
 
 # This is a `task` decorator.
 
-target="$HOME/tasks"
+# configs ************************************************************************************
+DEBUG=0
+DOMAIN="$HOME/tasks"
+target="$DOMAIN"
+CONFIG="$DOMAIN/.taskrc"
+# ********************************************************************************************
 
 # Define an associative array to store option descriptions
 declare -A option_descriptions=(
@@ -11,7 +16,6 @@ declare -A option_descriptions=(
     ["debug"]="Develop this script"
     ["help"]="Display a help message"
     ["open"]="cd to task's directory [Not implemented]"
-    # ["rv"]=
     ["sync"]="Synchronize with Github"
     ["*"]="Any other patterns executes as task *"
 )
@@ -22,8 +26,9 @@ main() {
     if [ $# -eq 0 ]; then no_arg_fn; fi
 
     case "$1" in
+        config) config_task "$@" ;;
+        debug) open_this_file "$@" ;;
         courses) show_courses ;;
-        debug) open_this_file ;;
         help | --help) help ;;
         open) warn "Not implemented." ; exit 1 ;;
         sync) synchronize ;;
@@ -37,8 +42,9 @@ main() {
 
 # Now add functions here in alphabetical order **********************************************
 
-show_courses() {
-    t next +course
+config_task() {
+    "$EDITOR" "$CONFIG"
+    exit 0
 }
 
 execute_and_push() {
@@ -53,7 +59,7 @@ execute_and_push() {
 no_arg_fn() {
 
     out=$(task active 2>&1)
-    if [[ "$out" == "No matches." ]]; then
+    if [[ "$out" == *"No matches."* ]]; then
         warn "No active tasks currently"
         task limit:10
         exit "$?"
@@ -89,6 +95,10 @@ push_to_github() {
     git -C $target commit -m "'$*'" > /dev/null
     git -C $target push
     exit "$?"
+}
+
+show_courses() {
+    t next +course
 }
 
 synchronize() {
