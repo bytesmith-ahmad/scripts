@@ -29,10 +29,9 @@ jrnl="$HOME/.local/pipx/venvs/jrnl/bin/jrnl" # True command
 
 
 function main() {
-    # if [ "$#" -eq 0 ]; then "$jrnl"; exit "$?"; fi
     case "$1" in
         "")   new_entry "$@" ;;
-        '?' ) print_info ;; # such as context
+        -\?) print_info ;; # such as context
         '.' ) view_journal_today "$@" ;;
         '..') view_journal_yesterday "$@" ;;
         help   | -h) shift; print_help ;;
@@ -152,20 +151,35 @@ new_entry() {
 print_info() {
     context
     # more info here
+    exit 0
 }
 
 # Help function to display usage information and option descriptions
 print_help() {
-    # ANSI color codes for colors without using \e[33m and \e[31m
-    GREEN='\033[0;32m'
-    BLUE='\033[0;34m'
-    NC='\033[0m' # No Color
-
-    echo "Usage: $(basename "$0") [OPTIONS]"
-    echo "Options:"
-    for option in "${!option_descriptions[@]}"; do
-        printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
-    done
+    # # ANSI color codes for colors without using \e[33m and \e[31m
+    # GREEN='\033[0;32m'
+    # BLUE='\033[0;34m'
+    # NC='\033[0m' # No Color
+# 
+    # echo "Usage: $(basename "$0") [OPTIONS]"
+    # echo "Options:"
+    # for option in "${!option_descriptions[@]}"; do
+        # printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
+    # done
+    # exit 0
+    echo 'case "$1" in
+        "")   new_entry "$@" ;;
+        -? ) print_info ;; # such as context
+        . ) view_journal_today "$@" ;;
+        ..) view_journal_yesterday "$@" ;;
+        help   | -h) shift; print_help ;;
+        debug  | -D) shift; debug_code "$@" ;;
+        git    | -g) shift; execute_git "$@" ;;
+        config | -C) shift; config_jrnl "$@" ;;
+        context| -c) shift; context "$@" ;;
+        update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
+        *) execute_true_jrnl "$@" ;;
+    esac'
     exit 0
 }
 
