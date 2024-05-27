@@ -40,6 +40,7 @@ function main() {
         config | -C) shift; config_jrnl "$@" ;;
         context| -c) shift; context "$@" ;;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
+        push   | -p) shift; push_to_remote ;;
         *) execute_true_jrnl "$@" ;;
     esac
 }
@@ -73,10 +74,10 @@ context() {
     esac
     if [[ -n $print_selected_journal ]]; then
         case "$context_value" in
-            none)     warn "Primary journal selected." ;;
-            academic) warn "Academic journal selected." ;;
-            work)     warn "Work journal selected." ;;
-            *)        err  "No journal named $context_value exists." ; exit 1 ;;
+            none)  warn "Primary journal selected." ;;
+            acad*) warn "Academic journal selected." ;;
+            work)  warn "Work journal selected." ;;
+            *)     err  "No journal named $context_value exists." ; exit 1 ;;
         esac
     elif [[ -n $list_context ]]; then
         echo -e "-none\n-academic\n-work"
@@ -178,9 +179,17 @@ print_help() {
         config | -C) shift; config_jrnl "$@" ;;
         context| -c) shift; context "$@" ;;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
+        push   | -p) shift; push_to_remote ;;
         *) execute_true_jrnl "$@" ;;
     esac'
     exit 0
+}
+
+push_to_remote() {
+    git -C $DOMAIN add .
+    git -C $DOMAIN commit -m "updating from $HOSTNAME"
+    git -C $DOMAIN push
+    exit "$?"
 }
 
 view_journal_today() {
