@@ -170,19 +170,20 @@ print_help() {
     # done
     # exit 0
     echo 'case "$1" in
-        "")   new_entry "$@" ;;
-        -? ) print_info ;; # such as context
-        . ) view_journal_today "$@" ;;
-        ..) view_journal_yesterday "$@" ;;
-        help   | -h) shift; print_help ;;
-        debug  | -D) shift; debug_code "$@" ;;
-        git    | -g) shift; execute_git "$@" ;;
-        config | -C) shift; config_jrnl "$@" ;;
-        context| -c) shift; context "$@" ;;
-        update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
-        push   | -p) shift; push_to_remote ;;
-        *) execute_true_jrnl "$@" ;;
-    esac'
+            "")   new_entry "$@" ;;
+            -?) print_info ;; # such as context
+            .) view_journal_today "$@" ;;
+            ..) view_journal_yesterday "$@" ;;
+            help   | -h) shift; print_help ;;
+            debug  | -D) shift; debug_code "$@" ;;
+            git    | -g) shift; execute_git "$@" ;;
+            config | -C) shift; config_jrnl "$@" ;;
+            context| -c) shift; context "$@" ;;
+            update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
+            push   | +p) shift; push_to_remote ;;
+            view   | ?d) view_entries_in_terminal "$@" ;;
+            *) execute_true_jrnl "$@" ;;
+        esac'
     exit 0
 }
 
