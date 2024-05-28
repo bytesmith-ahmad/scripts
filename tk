@@ -21,11 +21,8 @@ declare -A option_descriptions=(
 )
 
 main() {
-    #warn "This is a warning"
-
-    if [ $# -eq 0 ]; then no_arg_fn; fi
-
     case "$1" in
+        "") no_arg_fn ;;
         config) config_task "$@" ;;
         debug) open_this_file "$@" ;;
         courses) show_courses ;;
@@ -33,6 +30,7 @@ main() {
         open) warn "Not implemented." ; exit 1 ;;
         sync) synchronize ;;
         push) push_to_github "Sent from $HOSTNAME" ;;
+        +) add_task_interactively ;;
         *) execute_and_push "$@" ;;
     esac
 
@@ -42,6 +40,13 @@ main() {
 }
 
 # Now add functions here in alphabetical order **********************************************
+
+add_task_interactively() {
+    warn "DESCRIPTION proj:PROJECT-NAME +TAG pri:M recur:DURATION sch:DATE due:DATE dir:PATH file:PATH"
+    task=$( cat )
+    task add $task
+    exit "$?"
+}
 
 config_task() {
     "$EDITOR" "$CONFIG"
