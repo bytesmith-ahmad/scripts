@@ -40,7 +40,8 @@ function main() {
         config | -C) shift; config_jrnl "$@" ;;
         context| -c) shift; context "$@" ;;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
-        push   | -p) shift; push_to_remote ;;
+        push   | +p) shift; push_to_remote ;;
+        view   | ?d) view_entries_in_terminal "$@" ;;
         *) execute_true_jrnl "$@" ;;
     esac
 }
@@ -189,6 +190,20 @@ push_to_remote() {
     git -C $DOMAIN add .
     git -C $DOMAIN commit -m "updating from $HOSTNAME"
     git -C $DOMAIN push
+    exit "$?"
+}
+
+view_entries_in_terminal() {
+    context
+    C=$(get_context)
+    if [[ $C == 'none' ]]; then C='primary'; fi
+    length="${1:0:1}"
+    limit="$2"
+    debug "d = $length"
+    _date=$(date -d "$length days ago" "+%a %b %e %Y")
+    debug "date = $_date"
+    warn "Viewing entries for $_date"
+    "$jrnl" "$C" -on $(date -d "$_date" +%F) -n $limit
     exit "$?"
 }
 
