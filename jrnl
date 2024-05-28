@@ -44,7 +44,7 @@ function main() {
         debug  | -D) shift; debug_code "$@" ;;
         git    | -g) shift; execute_git "$@" ;;
         config | -C) shift; config_jrnl "$@" ;;
-        context| -c) shift; context "$@" ;;
+        context| -c) shift; context "$@" ; exit "$?";;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
         push   | +p) shift; push_to_remote ;;
         view   | ?d) view_entries_in_terminal "$@" ;;
@@ -84,7 +84,7 @@ config_jrnl() {
 context() {
     context_value=$(get_context)
     case "$1" in
-        "")                           print_selected_journal=1 ;;
+        "")                           print_selected_journal=1 ; list_context=1 ;;
         -l | list)                    list_context=1 ;;
         -n | none)                    set_context='none' ;;
         -a | acad | college | school) set_context='academic' ;;
@@ -98,9 +98,11 @@ context() {
             work)  warn "Work journal selected." ;;
             *)     err  "No journal named $context_value exists." ; exit 1 ;;
         esac
-    elif [[ -n $list_context ]]; then
+    fi
+    if [[ -n $list_context ]]; then
         echo -e "-none\n-academic\n-work"
-    elif [[ -n $set_context ]]; then
+    fi
+    if [[ -n $set_context ]]; then
         echo "$set_context" > "$CONTEXT"
         warn "Context set to [$set_context]"
     fi
