@@ -39,6 +39,7 @@ function main() {
         git    | -g) shift; execute_git "$@" ;;
         config | -C) shift; config_jrnl "$@" ;;
         context| -c) shift; context "$@" ;;
+        tags) "$jrnl" "$(get_journal)" --tags ;;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
         push   | +p) shift; push_to_remote ;;
         view   | ?d) view_entries_in_terminal "$@" ;;
@@ -110,9 +111,8 @@ execute_git() {
 
 execute_true_jrnl() {
     context
-    C=$(get_context)
-    if [[ $C == 'none' ]]; then C='primary'; fi
-    "$jrnl" "$C" "$@"
+    J=$(get_journal)
+    "$jrnl" "$J" "$@"
 
     #confirmation code
     # warn "Do you want to execute $jrnl $C $@ ? [Y/n] "
@@ -143,11 +143,20 @@ get_context() {
     fi
 }
 
+get_journal() {
+    local context=$(get_context)
+    case "$context" in
+        none)  echo 'primary'; exit 0 ;;
+        acad*) echo 'academic'; exit 0 ;;
+        work)  echo 'work'; exit 0 ;;
+        *) err "No journal associated to $context \!\!"; exit 1 ;;
+    esac
+}
+
 new_entry() {
     context
-    C=$(get_context)
-    if [[ $C == 'none' ]]; then C='primary'; fi
-    "$jrnl" "$C" --config-override editor ""
+    J=$(get_journal)
+    "$jrnl" "$J" --config-override editor ""
 }
 
 print_info() {
@@ -196,30 +205,27 @@ push_to_remote() {
 
 view_entries_in_terminal() {
     context
-    C=$(get_context)
-    if [[ $C == 'none' ]]; then C='primary'; fi
+    J=$(get_journal)
     length="${1:0:1}"
     limit="$2"
     debug "d = $length"
     _date=$(date -d "$length days ago" "+%a %b %e %Y")
     debug "date = $_date"
     warn "Viewing entries for $_date"
-    "$jrnl" "$C" -on $(date -d "$_date" +%F) -n $limit
+    "$jrnl" "$J" -on $(date -d "$_date" +%F) -n $limit
     exit "$?"
 }
 
 view_journal_today() {
     context
-    C=$(get_context)
-    if [[ $C == 'none' ]]; then C='primary'; fi
-    "$jrnl" "$C" -on today --edit
+    J=$(get_journal)
+    "$jrnl" "$J" -on today --edit
  }
 
 view_journal_yesterday() {
     context
-    C=$(get_context)
-    if [[ $C == 'none' ]]; then C='primary'; fi
-    "$jrnl" "$C" -on yesterday --edit
+    J=$(get_journal)
+    "$jrnl" "$J" -on yesterday --edit
 }
 
 warn() { echo -e "\e[33m$@\e[0m"; }
