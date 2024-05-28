@@ -176,6 +176,7 @@ new_entry() {
     context
     J=$(get_journal)
     "$jrnl" "$J" --config-override editor ""
+    exit "$?"
 }
 
 print_info() {
@@ -239,12 +240,14 @@ view_journal_today() {
     context
     J=$(get_journal)
     "$jrnl" "$J" -on today --edit
+    exit "$?"
  }
 
 view_journal_yesterday() {
     context
     J=$(get_journal)
     "$jrnl" "$J" -on yesterday --edit
+    exit "$?"
 }
 
 warn() { echo -e "\e[33m$@\e[0m"; }
