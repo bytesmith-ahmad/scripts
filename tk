@@ -30,7 +30,8 @@ main() {
         open) warn "Not implemented." ; exit 1 ;;
         sync) synchronize ;;
         push) push_to_github "Sent from $HOSTNAME" ;;
-        +) add_task_interactively ;;
+        +) shift; add_task_interactively ;;
+        # mod) shift; mod_task_interactively "@" ;; # doesn't work
         *) execute_and_push "$@" ;;
     esac
 
@@ -60,6 +61,19 @@ execute_and_push() {
         start|stop|done) no_arg_fn ;;
         *) exit "$?";;
     esac
+}
+
+mod_task_interactively() {
+    if [[ $# -eq 0 ]]; then
+        warn "Which ones to update?"
+        targets=$( cat )
+        tk \~ $targets
+    else
+        task next "$@"
+        warn "Modify which? [DESCRIPTION, proj, tags, pri, recur, sch, due, dir, file]"
+        modifications=$( cat )
+        tk "$@" mod $modifications
+    fi
 }
 
 no_arg_fn() {
