@@ -3,12 +3,13 @@
 # Wrapper for jrnl
 
 # configs ******************************************************************************************
-DEBUG=0
 DOMAIN="$HOME/journal"
-CONFIG="$DOMAIN/jrnl.yaml"
-CONFIG_WSL="$DOMAIN/jrnl-WSL.yaml"
-CONTEXT="$DOMAIN/.context"
-jrnl="$HOME/.local/pipx/venvs/jrnl/bin/jrnl" # True command
+cd $DOMAIN
+DEBUG=$(cat ".DEBUG")
+CONFIG="jrnl.yaml"
+CONFIG_WSL="jrnl-WSL.yaml"
+CONTEXT=".context"
+jrnl="$HOME/.local/pipx/venvs/jrnl/bin/jrnl" # True jrnl
 # **************************************************************************************************
 
 # ADD TO STANDARD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -29,9 +30,14 @@ jrnl="$HOME/.local/pipx/venvs/jrnl/bin/jrnl" # True command
 
 
 function main() {
+    # DEFAULT IF NO ARG
     case "$1" in
-        "")   new_entry "$@" ;;
-        -\?) print_info ;; # such as context
+        "") new_entry "$@" ;;
+    esac
+    
+    # SPECIAL COMMANDS
+    case "$1" in
+        -\?) print_info ;; # such as context, number of todos, consumed status, etc...
         '.' ) view_journal_today "$@" ;;
         '..') view_journal_yesterday "$@" ;;
         help   | -h) shift; print_help ;;
@@ -39,10 +45,21 @@ function main() {
         git    | -g) shift; execute_git "$@" ;;
         config | -C) shift; config_jrnl "$@" ;;
         context| -c) shift; context "$@" ;;
-        tags) "$jrnl" "$(get_journal)" --tags ;;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
         push   | +p) shift; push_to_remote ;;
         view   | ?d) view_entries_in_terminal "$@" ;;
+        # *) execute_true_jrnl "$@" ;;
+    esac
+    
+    # SHORTCUTS
+    case "$1" in
+        tags)  shift; execute_true_jrnl --tags ;;
+        todo)  shift; execute_true_jrnl "@TODO" "$@" ;;
+        del*)  shift; execute_true_jrnl --delete -n "$1" ;;
+    esac
+
+    # CATCH-ALL
+    case "$1" in
         *) execute_true_jrnl "$@" ;;
     esac
 }
@@ -113,7 +130,7 @@ execute_true_jrnl() {
     context
     J=$(get_journal)
     "$jrnl" "$J" "$@"
-
+    exit "$?"
     #confirmation code
     # warn "Do you want to execute $jrnl $C $@ ? [Y/n] "
     # read -r answer
