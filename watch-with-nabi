@@ -6,5 +6,5 @@ open_aot() {
 
 case "$1" in
     attack) open_aot ;;
-    *) echo -e "I don't know what u want..." ;;
+    *) echo -e "I don't know where is \"$@\"" ;;
 esac
