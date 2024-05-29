@@ -43,8 +43,8 @@ function main() {
         help   | -h) shift; print_help ;;
         debug  | -D) shift; debug_code "$@" ;;
         git    | -g) shift; execute_git "$@" ;;
-        config | -C) shift; config_jrnl "$@" ;;
-        context| -c) shift; context "$@" ; exit "$?";;
+        conf*  | -C) shift; config_jrnl "$@" ;;
+        cont*  | -c) shift; context "$@" ; exit "$?";;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
         push   | +p) shift; push_to_remote ;;
         view   | ?d) view_entries_in_terminal "$@" ;;
