@@ -29,6 +29,8 @@ main() {
         help    | -h) shift ; show_help "@" ;;
         get) shift; get_context "$@" ;;
         set) shift; set_context "$@" ;;
+        acad*) shift; set_context "acad" ;;
+        none) shift; set_context "none" ;;
         *) unknown_arg_interpreter "$@" ;;
     esac
 
@@ -48,8 +50,8 @@ get_context() {
 }
 
 set_context() {
-    warn "CONTEXT SET TO $1"
-    echo "$1" > $CONTEXT
+    $HOME/bin/tk context "$1"
+    $HOME/bin/jrnl context "$1"
     exit "$?"
 }
 
