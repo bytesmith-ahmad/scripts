@@ -1,0 +1,3 @@
+#!/bin/bash
+
+task rc:"$HOME"/experiment/dbA/.dbArc "$@"
