@@ -46,16 +46,16 @@ function main() {
         conf*  | -C) shift; config_jrnl "$@" ;;
         cont*  | -c) shift; context "$@" ; exit "$?";;
         update | -u) shift; update "$DOMAIN" -add "." -commit "updating from $HOSTNAME" ;;
-        push   | +p) shift; push_to_remote ;;
+        push   | -p) shift; push_to_remote ;;
         view   | ?d) view_entries_in_terminal "$@" ;;
-        # *) execute_true_jrnl "$@" ;;
     esac
     
     # SHORTCUTS
     case "$1" in
-        tags)  shift; execute_true_jrnl --tags ;;
-        todo)  shift; execute_true_jrnl "@TODO" "$@" ;;
-        del*)  shift; execute_true_jrnl --delete -n "$1" ;;
+        tags | -T) shift; execute_true_jrnl --tags ;;
+        todo | -t) shift; execute_true_jrnl "@TODO" "$@" ;;
+        del* | -d) shift; execute_true_jrnl --delete -n "$1" ;;
+        edit | -e) shift; execute_true_jrnl -on today --edit ;; 
     esac
 
     # CATCH-ALL
@@ -231,23 +231,23 @@ view_entries_in_terminal() {
     debug "d = $length"
     _date=$(date -d "$length days ago" "+%a %b %e %Y")
     debug "date = $_date"
-    warn "Viewing entries for $_date"
     "$jrnl" "$J" -on $(date -d "$_date" +%F) -n $limit
+    warn "Viewing entries for $_date"
     exit "$?"
 }
 
 view_journal_today() {
-    context
     J=$(get_journal)
-    "$jrnl" "$J" -on today --edit
-    exit "$?"
+    "$jrnl" "$J" -on today ; x="$?"
+    context
+    exit "$x"
  }
 
 view_journal_yesterday() {
-    context
     J=$(get_journal)
-    "$jrnl" "$J" -on yesterday --edit
-    exit "$?"
+    "$jrnl" "$J" -on yesterday ; x="$?"
+    context
+    exit "$x"
 }
 
 warn() { echo -e "\e[33m$@\e[0m"; }
