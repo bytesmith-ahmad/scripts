@@ -129,10 +129,10 @@ execute_git() {
 }
 
 execute_true_jrnl() {
-    context
     J=$(get_journal)
-    "$jrnl" "$J" "$@"
-    exit "$?"
+    "$jrnl" "$J" "$@" ; x="$?"
+    context
+    exit "$x"
     #confirmation code
     # warn "Do you want to execute $jrnl $C $@ ? [Y/n] "
     # read -r answer
