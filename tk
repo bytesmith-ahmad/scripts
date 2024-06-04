@@ -172,7 +172,7 @@ push_to_github() {
 }
 
 show_courses() {
-    t next +course
+    tk next +course
 }
 
 synchronize() {
