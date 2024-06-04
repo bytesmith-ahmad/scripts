@@ -3,8 +3,8 @@
 # This is a `task` decorator.
 
 # configs ************************************************************************************
-DEBUG=0
 DOMAIN="$HOME/tasks"
+DEBUG=0  # save settings in json
 target="$DOMAIN"
 CONFIG="$DOMAIN/.taskrc"
 # ********************************************************************************************
@@ -21,26 +21,40 @@ declare -A option_descriptions=(
 )
 
 main() {
+    # main options
     case "$1" in
-        "") no_arg_fn ;;
-        config) config_task "$@" ;;
-        debug) open_this_file "$@" ;;
-        courses) show_courses ;;
-        help | --help) help ;;
-        open) warn "Not implemented." ; exit 1 ;;
-        sync) synchronize ;;
-        push) push_to_github "Sent from $HOSTNAME" ;;
+        "") list_active_tasks ;;
+        config) shift ; edit_taskrc "$@" ;;
+        debug)  shift ; edit_code "$@" ;;
+        help)   print_help ;;
+        open)   shift ; open_associated_file ; exit 1 ;;
+        sync)   synchronize ;;
+        push)   push_to_github "Sent from $HOSTNAME" ;;
+        git | -g) shift ; execute_git "$@" ;;
+        add) shift; add_task "$@" ;;
         +) shift; add_task_interactively ;;
         # mod) shift; mod_task_interactively "@" ;; # doesn't work
-        *) execute_and_push "$@" ;;
     esac
 
-    # Process should not reach this point, if it does, maybe forgot exit
-    echo -e "\e[31mERROR\e[0m" >&2
-    exit 1
+    # shortcuts
+    case "$1" in
+        courses) show_courses ;;
+        todo) list_scheduled_today ;;
+    esac
+
+    # catch-all
+    case "$1" in
+        *) execute_and_push "$@" ;;
+    esac
 }
 
 # Now add functions here in alphabetical order **********************************************
+
+add_task() {
+    if [[ -z "$@" ]]; then add_task_interactively; fi
+    task add "$@"
+    exit "$?"
+}
 
 add_task_interactively() {
     warn "DESCRIPTION proj:PROJECT-NAME +TAG pri:M recur:DURATION sch:DATE due:DATE dir:PATH file:PATH"
@@ -49,18 +63,40 @@ add_task_interactively() {
     exit "$?"
 }
 
-config_task() {
+edit_taskrc() {
     "$EDITOR" "$CONFIG"
     exit 0
+}
+
+execute_git() {
+    git -C "$DOMAIN" "$@"
+    exit "$?"
 }
 
 execute_and_push() {
     task "$@"
     case "$1" in
         ad*|mod*|edit|done|undo|del*) push_to_github "$@" ;;
-        start|stop|done) no_arg_fn ;;
+        start|stop|done) list_active_tasks ;;
         *) exit "$?";;
     esac
+}
+
+list_active_tasks() {
+    out=$(task active 2>&1)
+    if [[ "$out" == *"No matches."* ]]; then
+        warn "No active tasks currently"
+        task limit:10
+        exit "$?"
+    else
+        task active
+        exit "$?"
+    fi
+}
+
+list_scheduled_today() {
+    task scheduled:today or +todo or +TODO or +next
+    exit "$?"
 }
 
 mod_task_interactively() {
@@ -76,37 +112,55 @@ mod_task_interactively() {
     fi
 }
 
-no_arg_fn() {
+print_help(){
+    echo "
+    case "$1" in
+        "") list_active_tasks ;;
+        config) shift ; edit_taskrc "$@" ;;
+        debug)  shift ; edit_code "$@" ;;
+        help)   print_help ;;
+        open)   shift ; open_associated_file ; exit 1 ;;
+        sync)   synchronize ;;
+        push)   push_to_github "Sent from $HOSTNAME" ;;
+        git | -g) shift ; execute_git "$@" ;;
+        +) shift; add_task_interactively ;;
+        # mod) shift; mod_task_interactively "@" ;; # doesn't work
+    esac
 
-    out=$(task active 2>&1)
-    if [[ "$out" == *"No matches."* ]]; then
-        warn "No active tasks currently"
-        task limit:10
-        exit "$?"
-    else
-        task active
-        exit "$?"
-    fi
+    # shortcuts
+    case "$1" in
+        courses) show_courses ;;
+        todo) list_scheduled_today ;;
+    esac
+
+    # catch-all
+    case "$1" in
+        *) execute_and_push "$@" ;;
+    esac"
 }
 
 # Help function to display usage information and option descriptions
-help() {
-    # ANSI color codes for colors without using \e[33m and \e[31m
-    GREEN='\033[0;32m'
-    BLUE='\033[0;34m'
-    NC='\033[0m' # No Color
+# print_help() {
+#     # ANSI color codes for colors without using \e[33m and \e[31m
+#     GREEN='\033[0;32m'
+#     BLUE='\033[0;34m'
+#     NC='\033[0m' # No Color
 
-    echo "Usage: $(basename "$0") [OPTIONS]"
-    echo -e "\e[96mAdditional functonality to TaskWarrior's task\e[0m"
-    echo -e "For greater help, do task help"
-    for option in "${!option_descriptions[@]}"; do
-        printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
-    done
-    exit 0
-}
+#     echo "Usage: $(basename "$0") [OPTIONS]"
+#     echo -e "\e[96mAdditional functonality to TaskWarrior's task\e[0m"
+#     echo -e "For greater help, do task help"
+#     for option in "${!option_descriptions[@]}"; do
+#         printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
+#     done
+#     exit 0
+# }
 
-open_this_file() {
-    micro $0
+edit_code() {
+    if [[ -n "$1" ]]
+        then editor="$1"
+        else editor="micro"
+    fi
+    "$editor" "$0"
     exit "$?"
 }
 
