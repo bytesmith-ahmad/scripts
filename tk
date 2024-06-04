@@ -58,7 +58,7 @@ add_task() {
 
 add_task_interactively() {
     warn "DESCRIPTION proj:PROJECT-NAME +TAG pri:M recur:DURATION sch:DATE due:DATE dir:PATH file:PATH"
-    task=$( cat )
+    task=$(cat)
     task add $task
     exit "$?"
 }
