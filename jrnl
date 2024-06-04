@@ -55,7 +55,8 @@ function main() {
         tags | -T) shift; execute_true_jrnl --tags ;;
         todo | -t) shift; execute_true_jrnl "@TODO" "$@" ;;
         del* | -d) shift; execute_true_jrnl --delete -n "$1" ;;
-        edit | -e) shift; execute_true_jrnl -on today --edit ;; 
+        edit | -e) shift; execute_true_jrnl -on today --edit ;;
+        undo | -z) shift; execute_true_jrnl --delete -1 ;;
     esac
 
     # CATCH-ALL
