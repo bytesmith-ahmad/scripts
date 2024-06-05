@@ -89,19 +89,21 @@ context() {
         -l | list)                    list_context=1 ;;
         -n | none)                    set_context='none' ;;
         -a | acad | college | school) set_context='academic' ;;
+        -fg| flexgig)                 set_context='flexgig' ;;
         -w | work)                    set_context='work' ;;
-        *)                            warn 'Usage: $ jrnl context [ list | none | acad | work ]'; exit 1 ;;
+        *)                            warn 'Usage: $ jrnl context [ list | none | acad | work | flex ]'; exit 1 ;;
     esac
     if [[ -n $print_selected_journal ]]; then
         case "$context_value" in
             none)  warn "Primary journal selected." ;;
             acad*) warn "Academic journal selected." ;;
             work)  warn "Work journal selected." ;;
-            *)     err  "No journal named $context_value exists." ; exit 1 ;;
+            flex*) warn "CST8319 project journal selected." ;;
+            *)     err  "No journal named $context_value exists." ; warn "this could be a bug check function `context`" ; exit 1 ;;
         esac
     fi
     if [[ -n $list_context ]]; then
-        echo -e "-none\n-academic\n-work"
+        echo -e "-none\n-academic\n-work\nflexgig"
     fi
     if [[ -n $set_context ]]; then
         echo "$set_context" > "$CONTEXT"
@@ -131,6 +133,7 @@ execute_git() {
 
 execute_true_jrnl() {
     J=$(get_journal)
+    debug "$jrnl" "$J" "$@"
     "$jrnl" "$J" "$@" ; x="$?"
     context
     exit "$x"
@@ -169,7 +172,8 @@ get_journal() {
         none)  echo 'primary'; exit 0 ;;
         acad*) echo 'academic'; exit 0 ;;
         work)  echo 'work'; exit 0 ;;
-        *) err "No journal associated to $context \!\!"; exit 1 ;;
+        flex* | *gig) echo 'flexgig' ; exit 0 ;; 
+        *) warn "unverified journal, see get_journal()" ; echo $context ;;
     esac
 }
 
@@ -251,7 +255,7 @@ view_journal_yesterday() {
     exit "$x"
 }
 
-warn() { echo -e "\e[33m$@\e[0m"; }
+warn() { echo -e "\e[33m$@\e[0m" >&2; }
 err()  { echo -e "\e[31m$@\e[0m" >&2; }
 
 main "$@"
