@@ -129,6 +129,7 @@ debug_code() {
 
 execute_git() {
     git -C "$DOMAIN" "$@"
+    exit "$?"
 }
 
 execute_true_jrnl() {
