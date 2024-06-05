@@ -85,7 +85,8 @@ config_jrnl() {
 context() {
     context_value=$(get_context)
     case "$1" in
-        "" | selected)                print_selected_journal=1 ;;
+        -? | "")                      print_selected_journal=1 ; list_context=1 ;;
+        -s | selected)                print_selected_journal=1 ;;
         -l | list)                    list_context=1 ;;
         -n | none)                    set_context='none' ;;
         -a | acad | college | school) set_context='academic' ;;
