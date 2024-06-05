@@ -3,11 +3,13 @@
 # sequence of startup
 main() {
     # warning "example warning"
+    warning "Check if internet connection first. Then prompt for update"
     update_home
     echo ""
     show_date
     echo ""
-    show_RV
+    echo -ne "\e[7;97mTODO\e[27;39m"
+    task scheduled:today or +todo or +TODO
     echo ""
     task_summary
 }
