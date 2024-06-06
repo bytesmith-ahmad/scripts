@@ -231,7 +231,7 @@ push_to_remote() {
 }
 
 view_entries_in_terminal() {
-    context
+    context selected
     J=$(get_journal)
     length="${1:0:1}"
     limit="$2"
@@ -246,14 +246,14 @@ view_entries_in_terminal() {
 view_journal_today() {
     J=$(get_journal)
     "$jrnl" "$J" -on today ; x="$?"
-    context
+    context selected
     exit "$x"
  }
 
 view_journal_yesterday() {
     J=$(get_journal)
     "$jrnl" "$J" -on yesterday ; x="$?"
-    context
+    context selected
     exit "$x"
 }
 
