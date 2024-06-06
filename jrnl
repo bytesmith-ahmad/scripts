@@ -104,7 +104,7 @@ context() {
         esac
     fi
     if [[ -n $list_context ]]; then
-        echo -e "-none\n-academic\n-work\nflexgig"
+        echo -e "  -none\n  -academic\n  -work\n  -flexgig"
     fi
     if [[ -n $set_context ]]; then
         echo "$set_context" > "$CONTEXT"
@@ -137,7 +137,7 @@ execute_true_jrnl() {
     J=$(get_journal)
     debug "$jrnl" "$J" "$@"
     "$jrnl" "$J" "$@" ; x="$?"
-    context
+    context selected
     exit "$x"
     #confirmation code
     # warn "Do you want to execute $jrnl $C $@ ? [Y/n] "
@@ -180,7 +180,7 @@ get_journal() {
 }
 
 new_entry() {
-    context
+    context selected
     J=$(get_journal)
     "$jrnl" "$J" --config-override editor ""
     exit "$?"
