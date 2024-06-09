@@ -6,8 +6,9 @@
 git config --global user.name "Bytesmith Ahmad"
 git config --global user.email "b-9k@outlook.com"
 
-## core
-git config --global core.editor micro   # Linux
+## config
+git config --global pull.rebase true     # For a cleaner commit history (no merge)
+git config --global core.editor micro    # Linux
 #git config --global core.editor notepad # Windows
 
 ## aliases
@@ -41,6 +42,6 @@ git config --global alias.up  "! git remote update -p; git merge --ff-only @{u}"
 #lor = git log --graph --decorate --oneline $(git rev-list -g --all)
 #lot = log --simplify-by-decoration
 
-echo -e "\e[33mConfigured! Do:
-    git config --global --edit
-To check result.\e[0m"
+echo -e "\e[33mConfigured!\e[0m
+git config --global --edit     ---> view config file
+git config --get-regexp ^alias ---> list aliases"
