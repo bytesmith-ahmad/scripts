@@ -32,7 +32,7 @@ git config --global alias.sta     "status"
 git config --global alias.sw      "switch"
 git config --global alias.lo   "! f() { git log --no-color --no-decorate | bat -n -l 'Git log' ; }; f"
 git config --global alias.a-c  "! git add . && git commit"
-git config --global alias.send "! f() { git add . && if [[ -n \"$@\" ]]; then git commit -m \"$@\"; else git commit; fi && git push --all ; }; f $@"
+git config --global alias.send '! f() { git add . && if [[ -n "$@" ]]; then echo "$@"; else git commit; fi && git push --all ; }; f'
 git config --global alias.up   "! git remote update -p; git merge --ff-only @{u}"
 
 ## other
