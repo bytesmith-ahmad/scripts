@@ -4,9 +4,10 @@
 
 # configs ************************************************************************************
 DOMAIN="$HOME/tasks"
+DEBUG="$DOMAIN/.debug"
 DEBUG=0  # save settings in json
-target="$DOMAIN"
 CONFIG="$DOMAIN/.taskrc"
+TASK_LIMIT=20
 # ********************************************************************************************
 
 # Define an associative array to store option descriptions
@@ -57,7 +58,7 @@ add_task() {
 }
 
 add_task_interactively() {
-    warn "DESCRIPTION proj:PROJECT-NAME +TAG pri:M recur:DURATION sch:DATE due:DATE dir:PATH file:PATH"
+    warn "DESCRIPTION +tag proj:   pri:   recur:   sch:   due:   dir:   file:   "
     task=$(cat)
     task add $task
     exit "$?"
@@ -86,7 +87,7 @@ list_active_tasks() {
     out=$(task active 2>&1)
     if [[ "$out" == *"No matches."* ]]; then
         warn "No active tasks currently"
-        task limit:10
+        task limit:$TASK_LIMIT
         exit "$?"
     else
         task active
@@ -176,7 +177,7 @@ show_courses() {
 }
 
 synchronize() {
-    output=$(git -C "$target" pull)
+    output=$(git -C "$DOMAIN" pull --rebase)
     # Check if the output contains "Already up to date."
     if [[ "$output" == "Already up to date." ]]; then
         # warn "Already up to date. Pushing changes..."
