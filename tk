@@ -31,6 +31,7 @@ main() {
         debug)  shift ; edit_code "$@" ;;
         help)   print_help ;;
         open)   shift ; open_associated_file ; exit 1 ;;
+        send)   send_changes_to_remote ;;
         sync)   synchronize ;;
         git | -g) shift ; execute_git "$@" ;;
         add) shift; add_task "$@" ;;
@@ -150,6 +151,11 @@ edit_code() {
     fi
     "$editor" "$0"
     exit "$?"
+}
+
+send_changes_to_remote() {
+    git -C "$DOMAIN" push
+    exit $?
 }
 
 show_courses() {
