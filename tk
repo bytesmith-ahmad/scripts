@@ -22,6 +22,8 @@ declare -A option_descriptions=(
 )
 
 main() {
+    cmds="$@"
+    
     # main options
     case "$1" in
         "") list_active_tasks ;;
@@ -30,43 +32,43 @@ main() {
         help)   print_help ;;
         open)   shift ; open_associated_file ; exit 1 ;;
         sync)   synchronize ;;
-        push)   push_to_github "Sent from $HOSTNAME" ;;
         git | -g) shift ; execute_git "$@" ;;
         add) shift; add_task "$@" ;;
         +) shift; add_task_interactively ;;
         # mod) shift; mod_task_interactively "@" ;; # doesn't work
-    esac
-
-    # shortcuts
-    case "$1" in
         courses) show_courses ;;
         todo) list_scheduled_today ;;
+        *) task "$@" ;;
     esac
 
-    # catch-all
-    case "$1" in
-        *) execute_and_push "$@" ;;
-    esac
+    #post_process "$@" # list tasks after executing
+
+    status=$( git -C $DOMAIN status --short )
+    if [[ -n "$status" ]]
+        then update_git "$cmds"   
+        else echo "No changes detected."
+    fi
+
+    exit $?
 }
 
 # Now add functions here in alphabetical order **********************************************
 
 add_task() {
-    if [[ -z "$@" ]]; then add_task_interactively; fi
-    task add "$@"
-    exit "$?"
+    if [[ -z "$@" ]]
+    then add_task_interactively
+    else task add "$@"
+    fi
 }
 
 add_task_interactively() {
     warn "DESCRIPTION +tag proj:   pri:   recur:   sch:   due:   dir:   file:   "
     task=$(cat)
     task add $task
-    exit "$?"
 }
 
-edit_taskrc() {
+edit_taskrc() { 
     "$EDITOR" "$CONFIG"
-    exit 0
 }
 
 execute_git() {
@@ -138,23 +140,8 @@ print_help(){
     case "$1" in
         *) execute_and_push "$@" ;;
     esac"
+    exit 0
 }
-
-# Help function to display usage information and option descriptions
-# print_help() {
-#     # ANSI color codes for colors without using \e[33m and \e[31m
-#     GREEN='\033[0;32m'
-#     BLUE='\033[0;34m'
-#     NC='\033[0m' # No Color
-
-#     echo "Usage: $(basename "$0") [OPTIONS]"
-#     echo -e "\e[96mAdditional functonality to TaskWarrior's task\e[0m"
-#     echo -e "For greater help, do task help"
-#     for option in "${!option_descriptions[@]}"; do
-#         printf "  ${GREEN}%-12s${NC} %s\n" "$option" "${option_descriptions[$option]}"
-#     done
-#     exit 0
-# }
 
 edit_code() {
     if [[ -n "$1" ]]
@@ -165,15 +152,9 @@ edit_code() {
     exit "$?"
 }
 
-push_to_github() {
-    git -C $target add .
-    git -C $target commit -m "'$*'" > /dev/null
-    git -C $target push
-    exit "$?"
-}
-
 show_courses() {
     tk next +course
+    exit 0
 }
 
 synchronize() {
@@ -187,7 +168,19 @@ synchronize() {
     fi
 }
 
+update_git() {
+    git -C $DOMAIN add .
+    git -C $DOMAIN commit --quiet --message "'$*'"
+    if [[ $? -eq 0 ]]
+        then inform "Committed."
+        else warn "Not committed."
+    fi
+}
+
+# Communication functions
+error() { echo -e "\e[31m$@\e[0m"; }
 warn() { echo -e "\e[33m$@\e[0m"; }
+inform() { echo -e "\e[32m$@\e[0m"; }
 
 # pass comands to TaskWarrior
 main "$@"
