@@ -89,22 +89,18 @@ context() {
         -s | selected)                print_selected_journal=1 ;;
         -l | list)                    list_context=1 ;;
         -n | none)                    set_context='none' ;;
-        -a | acad | college | school) set_context='academic' ;;
-        -fg| flexgig)                 set_context='flexgig' ;;
         -w | work)                    set_context='work' ;;
-        *)                            warn 'Usage: $ jrnl context [ list | none | acad | work | flex ]'; exit 1 ;;
+        *)                            warn 'Usage: $ jrnl context [ list | none ]'; exit 1 ;;
     esac
     if [[ -n $print_selected_journal ]]; then
         case "$context_value" in
             none)  warn "Primary journal selected." ;;
-            acad*) warn "Academic journal selected." ;;
             work)  warn "Work journal selected." ;;
-            flex*) warn "CST8319 project journal selected." ;;
             *)     err  "No journal named $context_value exists." ; warn "this could be a bug check function `context`" ; exit 1 ;;
         esac
     fi
     if [[ -n $list_context ]]; then
-        echo -e "  -none\n  -academic\n  -work\n  -flexgig"
+        echo -e "Contexts removed"
     fi
     if [[ -n $set_context ]]; then
         echo "$set_context" > "$CONTEXT"
