@@ -1,0 +1,15 @@
+#!/bin/bash
+
+copy_to_clipboard() {
+	not_found=$(type xclip 2>&1)
+	if [[ $not_found == *"not found" ]]; then
+		echo -e "xclip is not installed! Install it first"
+	else
+		uuidgen | xclip -selection clipboard
+	fi
+}
+
+case "$1" in
+	-c) copy_to_clipboard ;;
+	*) uuidgen "$@" ;;
+esac
